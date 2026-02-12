@@ -31,7 +31,7 @@ export default function SettingsPage() {
     try {
       const s = await fetchDbStatus();
       setStatus(s);
-    } catch (e) {
+    } catch {
       toast.error("Kon database status niet ophalen");
     } finally {
       setLoading(false);

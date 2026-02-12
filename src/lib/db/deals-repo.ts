@@ -1,7 +1,25 @@
 import type { Deal, DealStatus } from "@/types/deal";
 import { getPgPool } from "@/lib/db/postgres";
 
-function rowToDeal(row: any): Deal {
+type DealRow = {
+  id: string;
+  title: string;
+  url: string;
+  image_url: string;
+  category: string[] | null;
+  post_text: string | null;
+  generate: "Yes" | "No";
+  publish: boolean;
+  post_date: string | null;
+  promotion_days: Deal["promotionDays"];
+  promotion_end_date: string | null;
+  days_remaining: number | null;
+  status: DealStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+function rowToDeal(row: DealRow): Deal {
   return {
     id: row.id,
     title: row.title,
@@ -50,7 +68,7 @@ export async function pgInitSchema() {
 export async function pgGetDeals(): Promise<Deal[]> {
   const pool = getPgPool();
   const res = await pool.query(`select * from deals order by updated_at desc`);
-  return res.rows.map(rowToDeal);
+  return res.rows.map((r) => rowToDeal(r as DealRow));
 }
 
 export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Deal | null> {
@@ -73,7 +91,7 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
   ];
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let i = 1;
   for (const f of fields) {
     if (patch[f.key] === undefined) continue;
@@ -86,7 +104,7 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
 
   if (!updates.length) {
     const existing = await pool.query(`select * from deals where id = $1`, [id]);
-    return existing.rowCount ? rowToDeal(existing.rows[0]) : null;
+    return existing.rowCount ? rowToDeal(existing.rows[0] as DealRow) : null;
   }
 
   updates.push(`updated_at = now()`);
@@ -96,7 +114,7 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
     `update deals set ${updates.join(", ")} where id = $${values.length} returning *`,
     values
   );
-  return res.rowCount ? rowToDeal(res.rows[0]) : null;
+  return res.rowCount ? rowToDeal(res.rows[0] as DealRow) : null;
 }
 
 export async function pgPublishNow(id: string): Promise<Deal | null> {
@@ -111,6 +129,6 @@ export async function pgPublishNow(id: string): Promise<Deal | null> {
      returning *`,
     [id, "PUBLISHED" satisfies DealStatus]
   );
-  return res.rowCount ? rowToDeal(res.rows[0]) : null;
+  return res.rowCount ? rowToDeal(res.rows[0] as DealRow) : null;
 }
 
