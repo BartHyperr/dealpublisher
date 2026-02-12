@@ -12,6 +12,19 @@ npm run dev
 
 Open `http://localhost:3000` (landt standaard op `/search-schedule`).
 
+### Node versie (belangrijk)
+
+Gebruik **Node 20 LTS**. Next.js 14 dev-mode is instabiel op Node 22 (kan leiden tot ontbrekende `/_next/static/*` assets en een “verdwenen” frontend).
+
+- Met nvm:
+
+```bash
+nvm install 20
+nvm use
+```
+
+Of gebruik `npm run dev:clean` om `.next` te resetten als je dev assets stuk gaan.
+
 ## Routes
 
 - `/search-schedule`: deal grid + filters + klik naar edit modal

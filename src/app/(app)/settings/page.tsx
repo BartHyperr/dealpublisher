@@ -16,15 +16,33 @@ type DbStatus = {
   error: string | null;
 };
 
+type DealStats = {
+  source: "postgres" | "mock";
+  total: number;
+  actief: number;
+  concept: number;
+  ingepland: number;
+  gepubliceerd: number;
+  beeindigd: number;
+};
+
 async function fetchDbStatus(): Promise<DbStatus> {
   const res = await fetch("/api/settings/db", { cache: "no-store" });
   if (!res.ok) throw new Error("Status ophalen mislukt");
   return (await res.json()) as DbStatus;
 }
 
+async function fetchDealStats(): Promise<DealStats> {
+  const res = await fetch("/api/settings/deals/stats", { cache: "no-store" });
+  if (!res.ok) throw new Error("Statistieken ophalen mislukt");
+  return (await res.json()) as DealStats;
+}
+
 export default function SettingsPage() {
   const [status, setStatus] = React.useState<DbStatus | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = React.useState<DealStats | null>(null);
+  const [statsLoading, setStatsLoading] = React.useState(true);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -38,9 +56,22 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const refreshStats = React.useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const s = await fetchDealStats();
+      setStats(s);
+    } catch {
+      toast.error("Kon deal statistieken niet ophalen");
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
     void refresh();
-  }, [refresh]);
+    void refreshStats();
+  }, [refresh, refreshStats]);
 
   const snippet = `DATA_SOURCE=postgres
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dealpublisher?sslmode=disable"`;
@@ -124,6 +155,89 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
             Vernieuw status
           </Button>
         </div>
+
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Deal statistieken
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Overzicht van hoeveel deals er in de huidige datasource staan.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={refreshStats}
+              disabled={statsLoading}
+            >
+              Vernieuw statistieken
+            </Button>
+          </div>
+
+          {statsLoading ? (
+            <p className="mt-4 text-sm text-slate-500">Statistieken laden…</p>
+          ) : stats ? (
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Totaal
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                  {stats.total}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Bron: {stats.source === "postgres" ? "Postgres" : "Mock"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Actief
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                  {stats.actief}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Ingepland + gepubliceerd
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Concept
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                  {stats.concept}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Ingepland
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                  {stats.ingepland}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Gepubliceerd
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                  {stats.gepubliceerd}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Beëindigd
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                  {stats.beeindigd}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">Geen data.</p>
+          )}
+        </Card>
 
         <Card className="p-6">
           <div className="flex items-center gap-3">

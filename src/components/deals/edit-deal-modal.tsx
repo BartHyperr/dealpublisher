@@ -157,7 +157,7 @@ export function EditDealModal() {
 
   return (
     <Dialog open={modal.open} onOpenChange={(open) => (!open ? closeModal() : null)}>
-      <DialogContent className="p-0 overflow-hidden">
+      <DialogContent className="p-0 overflow-y-auto">
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -178,9 +178,9 @@ export function EditDealModal() {
           <div className="p-6 text-sm text-slate-500">Deal laden…</div>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-2 gap-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
               {/* Left */}
-              <div className="p-6 border-r border-slate-100">
+              <div className="p-4 sm:p-6 lg:border-r lg:border-slate-100">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-bold text-slate-900">
@@ -262,7 +262,7 @@ export function EditDealModal() {
               </div>
 
               {/* Right */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="rounded-2xl border border-primary/10 overflow-hidden bg-white shadow-sm">
                   <div className="relative h-44">
                     <Image

@@ -132,3 +132,44 @@ export async function pgPublishNow(id: string): Promise<Deal | null> {
   return res.rowCount ? rowToDeal(res.rows[0] as DealRow) : null;
 }
 
+export type DealStats = {
+  total: number;
+  actief: number;
+  concept: number;
+  ingepland: number;
+  gepubliceerd: number;
+  beeindigd: number;
+};
+
+export async function pgGetDealStats(): Promise<DealStats> {
+  const pool = getPgPool();
+  const res = await pool.query<{
+    total: string;
+    actief: string;
+    concept: string;
+    ingepland: string;
+    gepubliceerd: string;
+    beeindigd: string;
+  }>(`
+    select
+      count(*)::text as total,
+      count(*) filter (where status in ('SCHEDULED','PUBLISHED'))::text as actief,
+      count(*) filter (where status = 'DRAFT')::text as concept,
+      count(*) filter (where status = 'SCHEDULED')::text as ingepland,
+      count(*) filter (where status = 'PUBLISHED')::text as gepubliceerd,
+      count(*) filter (where status = 'ENDED')::text as beeindigd
+    from deals
+  `);
+
+  const row = res.rows[0];
+  const n = (v: string | undefined) => Number(v ?? "0");
+  return {
+    total: n(row?.total),
+    actief: n(row?.actief),
+    concept: n(row?.concept),
+    ingepland: n(row?.ingepland),
+    gepubliceerd: n(row?.gepubliceerd),
+    beeindigd: n(row?.beeindigd),
+  };
+}
+

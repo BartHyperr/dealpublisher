@@ -27,13 +27,13 @@ export default function SearchSchedulePage() {
 
   return (
     <>
-      <header className="bg-white border-b border-primary/10 p-6">
+      <header className="bg-white border-b border-primary/10 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
             <h1 className="text-2xl font-bold text-slate-900">
               Deals zoeken &amp; inplannen
             </h1>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 border border-slate-200 hover:bg-primary/5 transition-all relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
@@ -85,7 +85,7 @@ export default function SearchSchedulePage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50">
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="text-sm text-slate-500">Deals laden…</div>

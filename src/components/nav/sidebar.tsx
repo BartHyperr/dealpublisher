@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  LayoutDashboard,
   Rocket,
   Search,
   Settings,
@@ -13,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const nav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/search-schedule", label: "Zoeken & inplannen", icon: Search },
   { href: "/calendar", label: "Kalender", icon: CalendarDays },
   { href: "/active-trips", label: "Actieve trips", icon: Rocket },

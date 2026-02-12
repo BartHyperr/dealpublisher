@@ -28,6 +28,18 @@ export default function CalendarPage() {
     [deals]
   );
 
+  const monthAgenda = React.useMemo(() => {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+    return deals
+      .filter((d) => d.postDate)
+      .filter((d) => {
+        const dt = parseISO(d.postDate!);
+        return dt >= start && dt <= end;
+      })
+      .sort((a, b) => compareAsc(parseISO(a.postDate!), parseISO(b.postDate!)));
+  }, [deals, month]);
+
   const upcoming = React.useMemo(() => {
     const now = new Date();
     return deals
@@ -58,7 +70,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="max-w-[1600px] mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-6">
@@ -117,16 +129,53 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <CalendarMonth
-          month={month}
-          days={days}
-          deals={scheduledDeals}
-          onMoveDealToDate={moveDealToDate}
-          onOpenDeal={(id) => openModal(id)}
-        />
+        <div className="hidden md:block">
+          <CalendarMonth
+            month={month}
+            days={days}
+            deals={scheduledDeals}
+            onMoveDealToDate={moveDealToDate}
+            onOpenDeal={(id) => openModal(id)}
+          />
+        </div>
+
+        <div className="md:hidden rounded-2xl border border-slate-200 bg-white p-4">
+          <h2 className="text-sm font-bold text-slate-900">Agenda (deze maand)</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Op mobiel tonen we een lijst in plaats van een maand-grid.
+          </p>
+          <div className="mt-3 space-y-2">
+            {monthAgenda.length ? (
+              monthAgenda.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => openModal(d.id)}
+                  className="w-full text-left rounded-xl border border-slate-200 p-3 hover:bg-primary/5 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-slate-900 truncate">
+                        {d.title}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {d.postDate ? format(parseISO(d.postDate), "EEEE dd MMM, HH:mm") : "—"}
+                      </div>
+                    </div>
+                    <div className="text-xs font-bold text-primary whitespace-nowrap">
+                      {d.status}
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">Geen posts deze maand.</p>
+            )}
+          </div>
+        </div>
 
         <div className="mt-8 flex gap-8">
-          <div className="flex-1 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-slate-900">Aankomende posts</h3>
               <button className="text-xs font-semibold text-primary">
@@ -176,7 +225,7 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <div className="w-1/3 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="w-1/3 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm hidden lg:block">
             <h3 className="font-bold mb-4 text-slate-900">Kanaalgezondheid</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">

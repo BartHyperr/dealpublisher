@@ -35,7 +35,7 @@ export default function ActiveTripsPage() {
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-end justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Actieve trips</h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -43,7 +43,7 @@ export default function ActiveTripsPage() {
             </p>
           </div>
           {selectedIds.length ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <Button variant="secondary" onClick={() => setScheduleOpen(true)}>
                 <CalendarDays className="h-4 w-4" />
                 Geselecteerden inplannen ({selectedIds.length})
