@@ -37,7 +37,7 @@ export default function ActiveTripsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-end justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Active Trips</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Actieve trips</h1>
             <p className="mt-1 text-sm text-slate-500">
               Bulk acties verschijnen zodra je rijen selecteert.
             </p>
@@ -46,15 +46,15 @@ export default function ActiveTripsPage() {
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={() => setScheduleOpen(true)}>
                 <CalendarDays className="h-4 w-4" />
-                Schedule Selected ({selectedIds.length})
+                Geselecteerden inplannen ({selectedIds.length})
               </Button>
               <Button onClick={() => bulkPublish(selectedIds)}>
                 <Upload className="h-4 w-4" />
-                Publish Selected
+                Geselecteerden publiceren
               </Button>
               <Button variant="destructive" onClick={() => endPromotion(selectedIds)}>
                 <Flame className="h-4 w-4" />
-                End Promotion
+                Promotie beëindigen
               </Button>
             </div>
           ) : null}
@@ -70,7 +70,7 @@ export default function ActiveTripsPage() {
         <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
           <DialogContent className="p-0">
             <DialogHeader className="pb-4">
-              <DialogTitle>Schedule Selected</DialogTitle>
+              <DialogTitle>Geselecteerden inplannen</DialogTitle>
             </DialogHeader>
             <div className="px-6 pb-2">
               <p className="text-sm text-slate-600">
@@ -85,7 +85,7 @@ export default function ActiveTripsPage() {
             </div>
             <DialogFooter>
               <Button variant="secondary" onClick={() => setScheduleOpen(false)}>
-                Cancel
+                Annuleren
               </Button>
               <Button
                 onClick={async () => {
@@ -95,7 +95,7 @@ export default function ActiveTripsPage() {
                   setScheduleOpen(false);
                 }}
               >
-                Schedule
+                Inplannen
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -146,7 +146,7 @@ export function CalendarMonth({
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="grid grid-cols-7 border-b border-slate-200">
-          {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(
+          {["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"].map(
             (d) => (
               <div
                 key={d}
@@ -193,7 +193,7 @@ export function CalendarMonth({
                   ))}
                   {list.length > 3 ? (
                     <div className="mt-1 text-[10px] font-bold text-primary">
-                      +{list.length - 3} more
+                      +{list.length - 3} meer
                     </div>
                   ) : null}
                 </div>

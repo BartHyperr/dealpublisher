@@ -1,24 +1,16 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* DealPublisher theme tokens (afgeleid uit Stitch exports) */
 :root {
   --app-background: #f6f6f8;
-  --app-foreground: #0f172a; /* slate-900-ish */
+  --app-foreground: #0f172a;
   --app-primary: #5b13ec;
-
-  --radius: 0.75rem; /* rounded-xl */
 }
 
-@theme inline {
-  --color-background: var(--app-background);
-  --color-foreground: var(--app-foreground);
-  --color-primary: var(--app-primary);
-  --color-background-light: #f6f6f8;
-  --color-background-dark: #161022;
-
-  --radius-xl: var(--radius);
-  --font-display: var(--font-plus-jakarta);
-  --font-sans: var(--font-plus-jakarta);
+html,
+body {
+  height: 100%;
 }
 
 body {

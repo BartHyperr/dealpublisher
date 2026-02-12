@@ -10,10 +10,10 @@ const statusMeta: Record<
   DealStatus,
   { label: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  DRAFT: { label: "Draft", icon: PencilLine },
-  SCHEDULED: { label: "Scheduled", icon: Clock },
-  PUBLISHED: { label: "Published", icon: CheckCircle2 },
-  ENDED: { label: "Ended", icon: Slash },
+  DRAFT: { label: "Concept", icon: PencilLine },
+  SCHEDULED: { label: "Ingepland", icon: Clock },
+  PUBLISHED: { label: "Gepubliceerd", icon: CheckCircle2 },
+  ENDED: { label: "Beëindigd", icon: Slash },
 };
 
 export function DealStatusBadge({ status }: { status: DealStatus }) {

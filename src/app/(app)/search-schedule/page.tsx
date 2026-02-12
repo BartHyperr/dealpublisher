@@ -16,13 +16,13 @@ export default function SearchSchedulePage() {
   const openModal = useDealsStore((s) => s.actions.openModal);
 
   const categories = [
-    { id: "All Deals", label: "All Deals" },
+    { id: "Alle deals", label: "Alle deals" },
     { id: "Stedentrip", label: "🏙️ Stedentrip" },
     { id: "Vakantiepark", label: "🌲 Vakantiepark" },
     { id: "Wellness", label: "💆 Wellness" },
     { id: "Last Minute", label: "🏖️ Last Minute" },
-    { id: "Theme Parks", label: "🎢 Theme Parks" },
-    { id: "Coastal", label: "⛵ Coastal" },
+    { id: "Theme Parks", label: "🎢 Pretparken" },
+    { id: "Coastal", label: "⛵ Kust" },
   ];
 
   return (
@@ -31,7 +31,7 @@ export default function SearchSchedulePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-slate-900">
-              Deal Search &amp; Schedule
+              Deals zoeken &amp; inplannen
             </h1>
             <div className="flex items-center gap-4">
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 border border-slate-200 hover:bg-primary/5 transition-all relative">
@@ -40,7 +40,7 @@ export default function SearchSchedulePage() {
               </button>
               <Button className="h-11 px-6">
                 <Plus className="h-4 w-4" />
-                Create New Deal
+                Nieuwe deal
               </Button>
             </div>
           </div>
@@ -51,7 +51,7 @@ export default function SearchSchedulePage() {
             </span>
             <Input
               className="pl-11"
-              placeholder="Search destinations, hotels, or deal IDs..."
+              placeholder="Zoek bestemmingen, hotels of deal-ID's..."
               value={filters.query}
               onChange={(e) => setFilters({ query: e.target.value })}
             />
@@ -64,7 +64,7 @@ export default function SearchSchedulePage() {
             {categories.map((c) => {
               const selected =
                 filters.categories.includes(c.id) ||
-                (c.id === "All Deals" && filters.categories.includes("All Deals"));
+                (c.id === "Alle deals" && filters.categories.includes("Alle deals"));
               return (
                 <button
                   key={c.id}

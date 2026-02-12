@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 
 export function formatPostDateShort(iso?: string) {
-  if (!iso) return "Not Set";
+  if (!iso) return "Niet ingesteld";
   try {
     const dt = parseISO(iso);
     return format(dt, "MMM dd, HH:mm").toUpperCase();

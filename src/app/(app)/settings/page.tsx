@@ -83,7 +83,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dealpublisher?sslmode=di
       toast.error(json.error ?? "Seed data mislukt");
       return;
     }
-    toast.success(`Seeded ${json.count ?? 0} deals`);
+    toast.success(`Demo-data gevuld: ${json.count ?? 0} deals`);
     await refresh();
   };
 
@@ -115,13 +115,13 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Instellingen</h1>
             <p className="mt-2 text-slate-500">
               Configureer hier de Postgres koppeling voor DealPublisher.
             </p>
           </div>
           <Button variant="secondary" onClick={refresh} disabled={loading}>
-            Refresh status
+            Vernieuw status
           </Button>
         </div>
 
@@ -148,7 +148,7 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
               ) : (
                 <AlertTriangle className="h-4 w-4" />
               )}
-              {ok ? "CONNECTED" : "NOT CONNECTED"}
+              {ok ? "VERBONDEN" : "NIET VERBONDEN"}
             </div>
           </div>
 
@@ -217,7 +217,7 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
                   onClick={seedData}
                   disabled={!status?.enabled}
                 >
-                  Seed demo data
+                  Demo-data vullen
                 </Button>
               </div>
               <p className="text-xs text-slate-500">

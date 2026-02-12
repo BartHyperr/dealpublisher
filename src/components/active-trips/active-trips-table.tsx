@@ -23,7 +23,7 @@ function GenerateCell({ deal }: { deal: Deal }) {
     <div className="min-w-[160px]">
       <div className="flex items-center justify-between text-xs font-semibold">
         <span className={ready ? "text-emerald-600" : "text-slate-500"}>
-          {ready ? "Ready" : "Processing"}
+          {ready ? "Gereed" : "Bezig"}
         </span>
         {ready ? <Check className="h-4 w-4 text-emerald-600" /> : null}
       </div>
@@ -60,7 +60,7 @@ export function ActiveTripsTable({
     () => [
       {
         id: "select",
-        header: () => <span className="sr-only">Select</span>,
+        header: () => <span className="sr-only">Selecteer</span>,
         cell: ({ row }) => {
           const id = row.original.id;
           const checked = selection.has(id);
@@ -99,21 +99,21 @@ export function ActiveTripsTable({
       },
       {
         id: "generate",
-        header: "Generate",
+        header: "Genereren",
         cell: ({ row }) => <GenerateCell deal={row.original} />,
       },
       {
         accessorKey: "promotionDays",
-        header: "Promotion length",
+        header: "Promotieduur",
         cell: ({ row }) => (
           <span className="text-sm font-semibold text-slate-700">
-            {row.original.promotionDays} days
+            {row.original.promotionDays} dagen
           </span>
         ),
       },
       {
         id: "publish",
-        header: "Publish",
+        header: "Publiceren",
         cell: ({ row }) => {
           const d = row.original;
           return (
@@ -126,7 +126,7 @@ export function ActiveTripsTable({
       },
       {
         accessorKey: "postDate",
-        header: "Post date",
+        header: "Postdatum",
         cell: ({ row }) => (
           <span className="text-sm text-slate-700">
             {formatPostDateLong(row.original.postDate)}
@@ -196,8 +196,8 @@ export function ActiveTripsTable({
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-white">
         <div className="text-xs text-slate-500">
-          Page <span className="font-bold text-slate-900">{pageIndex + 1}</span>{" "}
-          of <span className="font-bold text-slate-900">{pageCount}</span>
+          Pagina <span className="font-bold text-slate-900">{pageIndex + 1}</span>{" "}
+          van <span className="font-bold text-slate-900">{pageCount}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -207,7 +207,7 @@ export function ActiveTripsTable({
             disabled={pageIndex === 0}
             onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
           >
-            Prev
+            Vorige
           </Button>
           <Button
             type="button"
@@ -216,7 +216,7 @@ export function ActiveTripsTable({
             disabled={pageIndex >= pageCount - 1}
             onClick={() => setPageIndex((p) => Math.min(pageCount - 1, p + 1))}
           >
-            Next
+            Volgende
           </Button>
         </div>
       </div>

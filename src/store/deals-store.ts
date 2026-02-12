@@ -93,7 +93,7 @@ function upsertDeal(list: Deal[], updated: Deal) {
 
 export const useDealsStore = create<DealsState>((set, get) => ({
   deals: [],
-  filters: { query: "", categories: ["All Deals"], status: "ALL" },
+  filters: { query: "", categories: ["Alle deals"], status: "ALL" },
   selection: new Set<string>(),
   modal: { open: false },
   loading: false,
@@ -105,7 +105,7 @@ export const useDealsStore = create<DealsState>((set, get) => ({
         const deals = await apiGetDeals();
         set({ deals });
       } catch {
-        toast.error("Failed to load deals");
+        toast.error("Deals laden mislukt");
       } finally {
         set({ loading: false });
       }
@@ -140,7 +140,7 @@ export const useDealsStore = create<DealsState>((set, get) => ({
         set((s) => ({ deals: upsertDeal(s.deals, deal) }));
         return deal;
       } catch {
-        toast.error("Save failed");
+        toast.error("Opslaan mislukt");
         return null;
       }
     },
@@ -155,9 +155,9 @@ export const useDealsStore = create<DealsState>((set, get) => ({
           deals: updated.reduce((acc, d) => upsertDeal(acc, d), s.deals),
           selection: new Set(),
         }));
-        toast.success("Deals scheduled");
+        toast.success("Deals ingepland");
       } catch {
-        toast.error("Bulk schedule failed");
+        toast.error("Bulk inplannen mislukt");
       }
     },
 
@@ -168,9 +168,9 @@ export const useDealsStore = create<DealsState>((set, get) => ({
           deals: updated.reduce((acc, d) => upsertDeal(acc, d), s.deals),
           selection: new Set(),
         }));
-        toast.success("Published to Facebook");
+        toast.success("Gepubliceerd naar Facebook");
       } catch {
-        toast.error("Bulk publish failed");
+        toast.error("Bulk publiceren mislukt");
       }
     },
 
@@ -183,9 +183,9 @@ export const useDealsStore = create<DealsState>((set, get) => ({
           deals: updated.reduce((acc, d) => upsertDeal(acc, d), s.deals),
           selection: new Set(),
         }));
-        toast.success("Promotion ended");
+        toast.success("Promotie beëindigd");
       } catch {
-        toast.error("End promotion failed");
+        toast.error("Promotie beëindigen mislukt");
       }
     },
 
@@ -193,14 +193,14 @@ export const useDealsStore = create<DealsState>((set, get) => ({
       const deal = get().deals.find((d) => d.id === dealId);
       if (!deal) return null;
       try {
-        toast.message("AI is regenerating…");
+        toast.message("AI genereert tekst…");
         const text = await apiRegenerate(deal);
         const updated = await apiPatchDeal(dealId, { postText: text, generate: "Yes" });
         set((s) => ({ deals: upsertDeal(s.deals, updated) }));
-        toast.success("Text regenerated");
+        toast.success("Tekst vernieuwd");
         return text;
       } catch {
-        toast.error("AI regenerate failed");
+        toast.error("AI regeneratie mislukt");
         return null;
       }
     },
@@ -225,7 +225,7 @@ export function useFilteredDeals() {
     const matchesStatus = status === "ALL" ? true : d.status === status;
 
     const matchesCats =
-      !cats.length || cats.includes("All Deals")
+      !cats.length || cats.includes("Alle deals")
         ? true
         : d.category.some((c) => cats.includes(c));
 

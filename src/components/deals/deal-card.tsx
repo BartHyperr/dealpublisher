@@ -51,7 +51,7 @@ export function DealCard({
             {deal.title}
           </h3>
           <span className={cn("text-primary font-bold", ended && "text-slate-400")}>
-            {ended ? "Expired" : "€—"}
+            {ended ? "Verlopen" : "€—"}
           </span>
         </div>
         <p
@@ -73,7 +73,7 @@ export function DealCard({
           <div className="flex items-center gap-2 text-slate-400">
             <Facebook className="h-4 w-4" />
             <span className="text-[10px] font-semibold">
-              {deal.postDate ? "FB Main" : "No Preview"}
+              {deal.postDate ? "FB Main" : "Geen preview"}
             </span>
           </div>
         </div>

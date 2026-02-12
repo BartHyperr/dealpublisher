@@ -79,7 +79,7 @@ export default function CalendarPage() {
                   size="sm"
                   onClick={() => setMonth(startOfMonth(new Date()))}
                 >
-                  Today
+                  Vandaag
                 </Button>
                 <Button
                   variant="secondary"
@@ -92,28 +92,28 @@ export default function CalendarPage() {
             </div>
             <Tabs defaultValue="month">
               <TabsList>
-                <TabsTrigger value="month">Month</TabsTrigger>
+                <TabsTrigger value="month">Maand</TabsTrigger>
                 <TabsTrigger value="week">Week</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
-          <Button>New Deal</Button>
+          <Button>Nieuwe deal</Button>
         </div>
 
         {/* Legend */}
         <div className="flex items-center gap-6 mb-4 px-1 text-xs font-medium text-slate-500 uppercase tracking-widest">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> Draft
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> Concept
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Scheduled
+            <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Ingepland
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Published
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Gepubliceerd
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-400 opacity-60" />{" "}
-            Ended
+            Beëindigd
           </div>
         </div>
 
@@ -128,9 +128,9 @@ export default function CalendarPage() {
         <div className="mt-8 flex gap-8">
           <div className="flex-1 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-900">Upcoming Posts</h3>
+              <h3 className="font-bold text-slate-900">Aankomende posts</h3>
               <button className="text-xs font-semibold text-primary">
-                View Queue
+                Bekijk wachtrij
               </button>
             </div>
             <div className="space-y-4">
@@ -155,7 +155,7 @@ export default function CalendarPage() {
                         {d.title}
                       </p>
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Facebook className="h-3.5 w-3.5" /> Post to Deals Page
+                        <Facebook className="h-3.5 w-3.5" /> Post naar Deals-pagina
                       </p>
                     </div>
                     <div className="text-right">
@@ -170,22 +170,22 @@ export default function CalendarPage() {
                 ))
               ) : (
                 <p className="text-sm text-slate-500">
-                  Geen upcoming posts.
+                  Geen aankomende posts.
                 </p>
               )}
             </div>
           </div>
 
           <div className="w-1/3 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 className="font-bold mb-4 text-slate-900">Channel Health</h3>
+            <h3 className="font-bold mb-4 text-slate-900">Kanaalgezondheid</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Facebook className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Facebook Primary</span>
+                  <span className="text-sm font-medium">Facebook primair</span>
                 </div>
                 <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  ACTIVE
+                  ACTIEF
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -194,19 +194,19 @@ export default function CalendarPage() {
                   <span className="text-sm font-medium">Facebook Wellness</span>
                 </div>
                 <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  ACTIVE
+                  ACTIEF
                 </span>
               </div>
 
               <div className="pt-4 border-t border-slate-100">
                 <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2">
-                  Publishing Limit
+                  Publicatielimiet
                 </p>
                 <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-primary h-full w-[65%] rounded-full" />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  13 of 20 deals scheduled this week
+                  13 van 20 deals ingepland deze week
                 </p>
               </div>
             </div>

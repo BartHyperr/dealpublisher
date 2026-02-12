@@ -121,12 +121,12 @@ export function EditDealModal() {
     }
 
     if (postDateIso) {
-      toast.success("Deal scheduled");
+      toast.success("Deal ingepland");
       closeModal();
       return;
     }
 
-    toast.success("Deal saved");
+    toast.success("Deal opgeslagen");
     closeModal();
   };
 
@@ -161,7 +161,7 @@ export function EditDealModal() {
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>Edit Deal</DialogTitle>
+              <DialogTitle>Deal bewerken</DialogTitle>
               {deal ? (
                 <p className="mt-1 text-sm text-slate-500">
                   {deal.id} · {deal.title}
@@ -221,7 +221,7 @@ export function EditDealModal() {
                       <Input
                         value={newCat}
                         onChange={(e) => setNewCat(e.target.value)}
-                        placeholder="Add category…"
+                        placeholder="Categorie toevoegen…"
                         className="h-9 w-44 bg-white border border-slate-200"
                       />
                       <Button
@@ -230,7 +230,7 @@ export function EditDealModal() {
                         size="sm"
                         onClick={addCategory}
                       >
-                        Add
+                        Toevoegen
                       </Button>
                     </div>
                   </div>
@@ -242,7 +242,7 @@ export function EditDealModal() {
                         type="button"
                         onClick={() => removeCategory(c)}
                         className="px-3 py-1.5 rounded-full bg-white border border-primary/10 text-slate-700 text-sm font-medium hover:border-primary/40 transition-all"
-                        title="Remove"
+                        title="Verwijderen"
                       >
                         {c}
                       </button>
@@ -273,7 +273,7 @@ export function EditDealModal() {
                     />
                     <div className="absolute top-3 left-3">
                       <span className="bg-slate-900/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg">
-                        Active Deal
+                        Actieve deal
                       </span>
                     </div>
                   </div>
@@ -322,9 +322,7 @@ export function EditDealModal() {
                 </div>
 
                 <div className="mt-6">
-                  <p className="text-sm font-bold text-slate-900">
-                    Promotion duration
-                  </p>
+                  <p className="text-sm font-bold text-slate-900">Promotieduur</p>
                   <div className="mt-3 grid grid-cols-5 gap-2">
                     {promotionDaysValues.map((d) => (
                       <button
@@ -348,7 +346,7 @@ export function EditDealModal() {
 
                 <div className="mt-6 flex items-start justify-between gap-4 rounded-2xl border border-slate-200 p-4">
                   <div>
-                    <p className="text-sm font-bold text-slate-900">Publish</p>
+                    <p className="text-sm font-bold text-slate-900">Publiceren</p>
                     <p className="text-xs text-slate-500 mt-1">
                       Zet aan om direct te publiceren via webhook.
                     </p>

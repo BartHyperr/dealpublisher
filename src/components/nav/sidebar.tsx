@@ -13,10 +13,10 @@ import {
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/search-schedule", label: "Search & Schedule", icon: Search },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/active-trips", label: "Active Trips", icon: Rocket },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/search-schedule", label: "Zoeken & inplannen", icon: Search },
+  { href: "/calendar", label: "Kalender", icon: CalendarDays },
+  { href: "/active-trips", label: "Actieve trips", icon: Rocket },
+  { href: "/settings", label: "Instellingen", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -63,7 +63,7 @@ export function Sidebar() {
             <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden" />
             <div>
               <p className="text-xs font-bold text-slate-900 leading-none">
-                Publisher Admin
+                Beheerder
               </p>
               <p className="text-[10px] text-slate-500 mt-1">DealPublisher</p>
             </div>
