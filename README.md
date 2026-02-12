@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DealPublisher
 
-## Getting Started
+Desktop-first web app om deals te zoeken, in te plannen en (mock) te publiceren.
 
-First, run the development server:
+## Runnen
 
 ```bash
+cd dealpublisher
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` (landt standaard op `/search-schedule`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/search-schedule`: deal grid + filters + klik naar edit modal
+- `/calendar`: maandweergave + drag & drop reschedule + “Upcoming Posts”
+- `/active-trips`: Active Trips tabel (TanStack Table) + bulk acties
+- `/settings`: placeholder
 
-## Learn More
+## Mock API (Next.js route handlers)
 
-To learn more about Next.js, take a look at the following resources:
+- `GET /api/deals`: mock seed data
+- `PATCH /api/deals/:id`: update deal (in-memory)
+- `POST /api/webhook/publish`: simuleert publish en zet status op `PUBLISHED`
+- `POST /api/ai/regenerate`: simuleert AI post tekst
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+In-memory persistence gebeurt via een singleton in `src/lib/deals/mock-db.ts` (blijft leven tijdens dev).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## State management (Zustand)
 
-## Deploy on Vercel
+Store: `src/store/deals-store.ts`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `deals`, `filters`, `selection` (Set), `modal`
+- acties voor `updateDeal`, bulk schedule/publish/end, AI regenerate
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## UI / componenten
+
+- shadcn-achtige UI primitives in `src/components/ui/*` (Radix + Tailwind)
+- Deal card en modal in `src/components/deals/*`
+- Calendar in `src/components/calendar/*`
+- Active Trips table in `src/components/active-trips/*`
+
+## Design referentie (Stitch)
+
+De pixel-close layout/styling is afgeleid uit de Stitch HTML exports die in de bovenliggende map staan:
+
+- `FB poster stitch design/deal_search_&_schedule_dashboard/code.html`
+- `FB poster stitch design/content_calendar_planner/code.html`
+
