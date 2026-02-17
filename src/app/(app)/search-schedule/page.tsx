@@ -38,7 +38,7 @@ export default function SearchSchedulePage() {
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
               </button>
-              <Button className="h-11 px-6">
+              <Button className="h-11 px-6" onClick={() => openModal(null)}>
                 <Plus className="h-4 w-4" />
                 Nieuwe deal
               </Button>

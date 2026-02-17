@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  HelpCircle,
   LayoutDashboard,
   Rocket,
   Search,
@@ -19,6 +20,7 @@ const nav = [
   { href: "/calendar", label: "Kalender", icon: CalendarDays },
   { href: "/active-trips", label: "Actieve trips", icon: Rocket },
   { href: "/settings", label: "Instellingen", icon: Settings },
+  { href: "/hulp", label: "Hulp", icon: HelpCircle },
 ];
 
 export function Sidebar() {
@@ -32,7 +34,7 @@ export function Sidebar() {
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight text-primary">
-            Deal<span className="text-slate-900">Publisher</span>
+            Hyperr<span className="text-slate-900"> Poster</span>
           </span>
         </div>
 
@@ -67,7 +69,7 @@ export function Sidebar() {
               <p className="text-xs font-bold text-slate-900 leading-none">
                 Beheerder
               </p>
-              <p className="text-[10px] text-slate-500 mt-1">DealPublisher</p>
+              <p className="text-[10px] text-slate-500 mt-1">Hyperr Poster</p>
             </div>
           </div>
         </div>

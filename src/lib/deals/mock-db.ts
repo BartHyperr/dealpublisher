@@ -70,6 +70,15 @@ function getGlobalState(): DbState {
   return g.__DEALPUBLISHER_DB__;
 }
 
+export type CreateDealInput = Omit<
+  Deal,
+  "id" | "createdAt" | "updatedAt" | "promotionEndDate" | "daysRemaining"
+> & { promotionEndDate?: string; daysRemaining?: number };
+
+function generateId(): string {
+  return "deal-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
+}
+
 export const dealsDb = {
   getAll(): Deal[] {
     return getGlobalState().deals;
@@ -77,6 +86,19 @@ export const dealsDb = {
 
   getById(id: string): Deal | undefined {
     return getGlobalState().deals.find((d) => d.id === id);
+  },
+
+  create(input: CreateDealInput): Deal {
+    const state = getGlobalState();
+    const now = iso(new Date());
+    const deal: Deal = normalizeDeal({
+      ...input,
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now,
+    } as Deal);
+    state.deals.unshift(deal);
+    return deal;
   },
 
   patchById(id: string, patch: Partial<Deal>): Deal | undefined {

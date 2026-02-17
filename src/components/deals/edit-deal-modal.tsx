@@ -20,8 +20,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { DealStatusBadge } from "@/components/deals/deal-status-badge";
 
 const promotionDaysValues = [5, 7, 14, 21, 30] as const;
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80";
 
 const formSchema = z.object({
+  title: z.string().optional(),
+  url: z.string().optional(),
+  imageUrl: z.string().optional(),
   postText: z.string().min(1, "Post tekst is verplicht"),
   category: z.array(z.string()).min(1, "Kies minimaal 1 categorie"),
   postDate: z.string().optional(),
@@ -63,13 +68,19 @@ export function EditDealModal() {
   );
 
   const closeModal = useDealsStore((s) => s.actions.closeModal);
+  const createDeal = useDealsStore((s) => s.actions.createDeal);
   const updateDeal = useDealsStore((s) => s.actions.updateDeal);
   const bulkPublish = useDealsStore((s) => s.actions.bulkPublish);
   const regeneratePostText = useDealsStore((s) => s.actions.regeneratePostText);
 
+  const isNew = modal.dealId === null;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      title: "",
+      url: "",
+      imageUrl: DEFAULT_IMAGE,
       postText: "",
       category: [],
       postDate: undefined,
@@ -79,15 +90,31 @@ export function EditDealModal() {
   });
 
   React.useEffect(() => {
+    if (isNew) {
+      form.reset({
+        title: "",
+        url: "",
+        imageUrl: DEFAULT_IMAGE,
+        postText: "",
+        category: [],
+        postDate: undefined,
+        promotionDays: 7,
+        publish: false,
+      });
+      return;
+    }
     if (!deal) return;
     form.reset({
+      title: deal.title,
+      url: deal.url,
+      imageUrl: deal.imageUrl,
       postText: deal.postText ?? "",
       category: deal.category ?? [],
       postDate: deal.postDate,
       promotionDays: deal.promotionDays,
       publish: deal.publish ?? false,
     });
-  }, [deal, form]);
+  }, [deal, isNew, form]);
 
   const postText = form.watch("postText");
   const categories = form.watch("category");
@@ -97,11 +124,35 @@ export function EditDealModal() {
   const [newCat, setNewCat] = React.useState("");
 
   const onSubmit = async (values: FormValues) => {
-    if (!deal) return;
-
     const postDateIso = values.postDate ? values.postDate : undefined;
     const status: Deal["status"] =
       values.publish ? "SCHEDULED" : postDateIso ? "SCHEDULED" : "DRAFT";
+
+    if (isNew) {
+      const title = (values.title ?? "").trim();
+      if (!title) {
+        form.setError("title", { message: "Titel is verplicht" });
+        return;
+      }
+      const created = await createDeal({
+        title,
+        url: (values.url ?? "").trim() || "#",
+        imageUrl: (values.imageUrl ?? "").trim() || DEFAULT_IMAGE,
+        postText: values.postText,
+        category: values.category,
+        postDate: postDateIso,
+        promotionDays: values.promotionDays,
+        publish: values.publish,
+        status,
+      });
+      if (!created) return;
+      if (values.publish) await bulkPublish([created.id]);
+      toast.success("Deal aangemaakt");
+      closeModal();
+      return;
+    }
+
+    if (!deal) return;
 
     const saved = await updateDeal(deal.id, {
       postText: values.postText,
@@ -131,6 +182,10 @@ export function EditDealModal() {
   };
 
   const handleRegenerate = async () => {
+    if (isNew) {
+      toast.message("AI-regeneratie is alleen beschikbaar na het aanmaken van de deal.");
+      return;
+    }
     if (!deal) return;
     const text = await regeneratePostText(deal.id);
     if (text) form.setValue("postText", text, { shouldDirty: true });
@@ -161,20 +216,22 @@ export function EditDealModal() {
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>Deal bewerken</DialogTitle>
-              {deal ? (
+              <DialogTitle>{isNew ? "Nieuwe deal" : "Deal bewerken"}</DialogTitle>
+              {isNew ? (
+                <p className="mt-1 text-sm text-slate-500">Vul de gegevens in en sla op.</p>
+              ) : deal ? (
                 <p className="mt-1 text-sm text-slate-500">
                   {deal.id} · {deal.title}
                 </p>
               ) : (
-                <p className="mt-1 text-sm text-slate-500">—</p>
+                <p className="mt-1 text-sm text-slate-500">Deal laden…</p>
               )}
             </div>
             {deal ? <DealStatusBadge status={deal.status} /> : null}
           </div>
         </DialogHeader>
 
-        {!deal ? (
+        {!isNew && !deal ? (
           <div className="p-6 text-sm text-slate-500">Deal laden…</div>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -263,6 +320,44 @@ export function EditDealModal() {
 
               {/* Right */}
               <div className="p-4 sm:p-6">
+                {isNew ? (
+                  <>
+                    <p className="text-sm font-bold text-slate-900 mb-2">Titel</p>
+                    <Input
+                      {...form.register("title")}
+                      placeholder="Bijv. Weekend Barcelona"
+                      className="mb-4 bg-white border border-slate-200"
+                    />
+                    {form.formState.errors.title ? (
+                      <p className="mb-4 -mt-2 text-xs font-semibold text-rose-600">
+                        {form.formState.errors.title.message}
+                      </p>
+                    ) : null}
+                    <p className="text-sm font-bold text-slate-900 mb-2">Link (URL)</p>
+                    <Input
+                      {...form.register("url")}
+                      placeholder="https://..."
+                      className="mb-4 bg-white border border-slate-200"
+                    />
+                    <p className="text-sm font-bold text-slate-900 mb-2">Afbeelding-URL</p>
+                    <Input
+                      {...form.register("imageUrl")}
+                      placeholder="https://..."
+                      className="mb-4 bg-white border border-slate-200"
+                    />
+                    <div className="rounded-2xl border border-primary/10 overflow-hidden bg-white shadow-sm mt-4">
+                      <div className="relative h-32">
+                        <Image
+                          src={form.watch("imageUrl") || DEFAULT_IMAGE}
+                          alt="Preview"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : deal ? (
                 <div className="rounded-2xl border border-primary/10 overflow-hidden bg-white shadow-sm">
                   <div className="relative h-44">
                     <Image
@@ -300,6 +395,7 @@ export function EditDealModal() {
                     </div>
                   </div>
                 </div>
+                ) : null}
 
                 <div className="mt-6">
                   <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -307,7 +403,7 @@ export function EditDealModal() {
                     Datum online
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    Huidig: {formatPostDateLong(deal.postDate)}
+                    Huidig: {deal ? formatPostDateLong(deal.postDate) : "Nog niet ingepland"}
                   </p>
                   <Input
                     type="datetime-local"

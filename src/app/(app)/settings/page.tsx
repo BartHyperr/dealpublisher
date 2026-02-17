@@ -2,10 +2,14 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Database, AlertTriangle, Copy } from "lucide-react";
+import { CheckCircle2, Database, AlertTriangle, Copy, Mail } from "lucide-react";
 
+import type { NotificationSettings } from "@/types/notifications";
+import { NOTIFY_DAYS_OPTIONS } from "@/types/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 type DbStatus = {
   configured: boolean;
@@ -38,11 +42,20 @@ async function fetchDealStats(): Promise<DealStats> {
   return (await res.json()) as DealStats;
 }
 
+async function fetchNotificationSettings(): Promise<NotificationSettings> {
+  const res = await fetch("/api/settings/notifications", { cache: "no-store" });
+  if (!res.ok) throw new Error("Notificatie-instellingen ophalen mislukt");
+  return res.json() as Promise<NotificationSettings>;
+}
+
 export default function SettingsPage() {
   const [status, setStatus] = React.useState<DbStatus | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState<DealStats | null>(null);
   const [statsLoading, setStatsLoading] = React.useState(true);
+  const [notif, setNotif] = React.useState<NotificationSettings | null>(null);
+  const [notifLoading, setNotifLoading] = React.useState(true);
+  const [notifSaving, setNotifSaving] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -68,10 +81,48 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const refreshNotif = React.useCallback(async () => {
+    setNotifLoading(true);
+    try {
+      const s = await fetchNotificationSettings();
+      setNotif(s);
+    } catch {
+      toast.error("Kon notificatie-instellingen niet ophalen");
+    } finally {
+      setNotifLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
     void refresh();
     void refreshStats();
-  }, [refresh, refreshStats]);
+    void refreshNotif();
+  }, [refresh, refreshStats, refreshNotif]);
+
+  const saveNotif = async () => {
+    if (!notif) return;
+    setNotifSaving(true);
+    try {
+      const res = await fetch("/api/settings/notifications", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: notif.email,
+          notifyOnEnded: notif.notifyOnEnded,
+          notifyDaysBefore: notif.notifyDaysBefore,
+          weeklyDigest: notif.weeklyDigest,
+        }),
+      });
+      if (!res.ok) throw new Error("Opslaan mislukt");
+      const updated = (await res.json()) as NotificationSettings;
+      setNotif(updated);
+      toast.success("Notificatie-instellingen opgeslagen");
+    } catch {
+      toast.error("Kon notificaties niet opslaan");
+    } finally {
+      setNotifSaving(false);
+    }
+  };
 
   const snippet = `DATA_SOURCE=postgres
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dealpublisher?sslmode=disable"`;
@@ -148,7 +199,7 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Instellingen</h1>
             <p className="mt-2 text-slate-500">
-              Configureer hier de Postgres koppeling voor DealPublisher.
+              Configureer hier de Postgres koppeling voor Hyperr Poster.
             </p>
           </div>
           <Button variant="secondary" onClick={refresh} disabled={loading}>
@@ -236,6 +287,125 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
             </div>
           ) : (
             <p className="mt-4 text-sm text-slate-500">Geen data.</p>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Mail className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-slate-900">Notificaties</h2>
+              <p className="text-sm text-slate-500">
+                E-mail bij afgelopen deal, bijna aflopende deal en wekelijkse update.
+              </p>
+            </div>
+          </div>
+
+          {notifLoading ? (
+            <p className="mt-4 text-sm text-slate-500">Laden…</p>
+          ) : notif ? (
+            <div className="mt-6 space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  E-mailadres
+                </label>
+                <Input
+                  type="email"
+                  value={notif.email}
+                  onChange={(e) => setNotif({ ...notif, email: e.target.value })}
+                  placeholder="jouw@email.nl"
+                  className="max-w-md bg-white border border-slate-200"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Alle notificaties worden naar dit adres gestuurd.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">E-mail bij afgelopen deal</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Ontvang een e-mail wanneer een deal is beëindigd.
+                  </p>
+                </div>
+                <Switch
+                  checked={notif.notifyOnEnded}
+                  onCheckedChange={(v) => setNotif({ ...notif, notifyOnEnded: v })}
+                />
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">
+                      E-mail wanneer deal bijna afloopt
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Stuur een herinnering X dagen vóór de einddatum.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notif.notifyDaysBefore !== null && notif.notifyDaysBefore > 0}
+                    onCheckedChange={(v) =>
+                      setNotif({
+                        ...notif,
+                        notifyDaysBefore: v ? 2 : null,
+                      })
+                    }
+                  />
+                </div>
+                {notif.notifyDaysBefore !== null && notif.notifyDaysBefore > 0 && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <span className="text-sm text-slate-600">Stuur e-mail</span>
+                    <select
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
+                      value={notif.notifyDaysBefore}
+                      onChange={(e) =>
+                        setNotif({
+                          ...notif,
+                          notifyDaysBefore: Number(e.target.value) as NotificationSettings["notifyDaysBefore"],
+                        })
+                      }
+                    >
+                      {NOTIFY_DAYS_OPTIONS.map((d) => (
+                        <option key={d} value={d}>
+                          {d} {d === 1 ? "dag" : "dagen"} van tevoren
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Wekelijkse update</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Elke week een e-mail met actieve campagnes, afgelopen week afgelopen en volgende week ingepland.
+                  </p>
+                </div>
+                <Switch
+                  checked={notif.weeklyDigest}
+                  onCheckedChange={(v) => setNotif({ ...notif, weeklyDigest: v })}
+                />
+              </div>
+
+              <Button onClick={saveNotif} disabled={notifSaving}>
+                {notifSaving ? "Opslaan…" : "Notificatie-instellingen opslaan"}
+              </Button>
+
+              <p className="text-xs text-slate-500">
+                Zet <code className="bg-slate-100 px-1 rounded">RESEND_API_KEY</code> en optioneel{" "}
+                <code className="bg-slate-100 px-1 rounded">NOTIFICATION_FROM_EMAIL</code> in je
+                omgeving. Laat een externe cron (bijv. cron-job.org) dagelijks{" "}
+                <code className="bg-slate-100 px-1 rounded">GET /api/cron/notifications</code> aanroepen
+                met <code className="bg-slate-100 px-1 rounded">Authorization: Bearer CRON_SECRET</code>.
+              </p>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">Kon instellingen niet laden.</p>
           )}
         </Card>
 
@@ -336,7 +506,7 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
               </div>
               <p className="text-xs text-slate-500">
                 Tip: zet eerst `DATA_SOURCE=postgres` + `DATABASE_URL` in je
-                `dealpublisher/.env.local`, herstart de dev-server, en test dan
+                `.env.local`, herstart de dev-server, en test dan
                 opnieuw.
               </p>
             </div>
@@ -374,7 +544,7 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
               Developer uitleg (Postgres)
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              DealPublisher kan draaien op een mock in-memory datasource of op
+              Hyperr Poster kan draaien op een mock in-memory datasource of op
               Postgres. Zodra `DATA_SOURCE=postgres` en `DATABASE_URL` gezet
               zijn, gebruiken de bestaande API routes automatisch Postgres.
             </p>
@@ -388,7 +558,7 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
                 </p>
                 <ul className="mt-3 space-y-2 text-sm text-slate-700">
                   <li>
-                    - Zet in `dealpublisher/.env.local`:
+                    - Zet in `.env.local`:
                     <span className="font-semibold">
                       {" "}
                       DATA_SOURCE=postgres

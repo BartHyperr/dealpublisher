@@ -1,4 +1,4 @@
-# DealPublisher
+# Hyperr Poster
 
 Desktop-first web app om deals te zoeken, in te plannen en (mock) te publiceren.
 

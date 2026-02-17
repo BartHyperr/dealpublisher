@@ -5,13 +5,25 @@ import { toast } from "sonner";
 
 import type { Deal, DealStatus } from "@/types/deal";
 
+export type CreateDealPayload = {
+  title: string;
+  url: string;
+  imageUrl: string;
+  category: string[];
+  postText: string;
+  postDate?: string;
+  promotionDays: Deal["promotionDays"];
+  publish: boolean;
+  status?: Deal["status"];
+};
+
 export type DealFilters = {
   query: string;
   categories: string[];
   status?: DealStatus | "ALL";
 };
 
-type ModalState = { open: boolean; dealId?: string };
+type ModalState = { open: boolean; dealId: string | null };
 
 type DealsState = {
   deals: Deal[];
@@ -28,9 +40,10 @@ type DealsState = {
     clearSelection: () => void;
     selectMany: (ids: string[]) => void;
 
-    openModal: (dealId: string) => void;
+    openModal: (dealId: string | null) => void;
     closeModal: () => void;
 
+    createDeal: (payload: CreateDealPayload) => Promise<Deal | null>;
     updateDeal: (dealId: string, patch: Partial<Deal>) => Promise<Deal | null>;
     bulkSchedule: (dealIds: string[], postDate: string) => Promise<void>;
     bulkPublish: (dealIds: string[]) => Promise<void>;
@@ -95,7 +108,7 @@ export const useDealsStore = create<DealsState>((set, get) => ({
   deals: [],
   filters: { query: "", categories: ["Alle deals"], status: "ALL" },
   selection: new Set<string>(),
-  modal: { open: false },
+  modal: { open: false, dealId: null },
   loading: false,
 
   actions: {
@@ -132,7 +145,30 @@ export const useDealsStore = create<DealsState>((set, get) => ({
       })),
 
     openModal: (dealId) => set({ modal: { open: true, dealId } }),
-    closeModal: () => set({ modal: { open: false, dealId: undefined } }),
+    closeModal: () => set({ modal: { open: false, dealId: null } }),
+
+    createDeal: async (payload) => {
+      try {
+        const res = await fetch("/api/deals", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            ...payload,
+            status: payload.status ?? (payload.postDate || payload.publish ? "SCHEDULED" : "DRAFT"),
+          }),
+        });
+        if (!res.ok) {
+          const data = (await res.json()) as { error?: string };
+          throw new Error(data.error ?? "Failed to create deal");
+        }
+        const json = (await res.json()) as { deal: Deal };
+        set((s) => ({ deals: [json.deal, ...s.deals] }));
+        return json.deal;
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Deal aanmaken mislukt");
+        return null;
+      }
+    },
 
     updateDeal: async (dealId, patch) => {
       try {

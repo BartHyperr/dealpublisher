@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="md:hidden bg-white border-b border-primary/10 px-4 py-3 flex items-center justify-between">
           <MobileNav />
-          <div className="text-sm font-bold text-slate-900">DealPublisher</div>
+          <div className="text-sm font-bold text-slate-900">Hyperr Poster</div>
           <div className="w-10" />
         </div>
         <DealsHydrator />

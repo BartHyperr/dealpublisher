@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { isPostgresEnabled } from "@/lib/db/postgres";
 import { pgInitSchema } from "@/lib/db/deals-repo";
+import { pgInitNotificationSchema } from "@/lib/db/notifications-repo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function POST() {
 
   try {
     await pgInitSchema();
+    await pgInitNotificationSchema();
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(

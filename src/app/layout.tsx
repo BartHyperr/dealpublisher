@@ -9,8 +9,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DealPublisher",
-  description: "DealPublisher — Search, schedule en publiceer deals.",
+  title: "Hyperr Poster",
+  description: "Hyperr Poster — Search, schedule en publiceer deals.",
 };
 
 export default function RootLayout({

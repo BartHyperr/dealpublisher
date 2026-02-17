@@ -71,6 +71,48 @@ export async function pgGetDeals(): Promise<Deal[]> {
   return res.rows.map((r) => rowToDeal(r as DealRow));
 }
 
+type CreateDealPayload = {
+  title: string;
+  url: string;
+  imageUrl: string;
+  category: string[];
+  postText: string;
+  promotionDays: Deal["promotionDays"];
+  publish: boolean;
+  postDate?: string;
+  status: DealStatus;
+  generate: "Yes" | "No";
+};
+
+export async function pgCreateDeal(payload: CreateDealPayload): Promise<Deal> {
+  const pool = getPgPool();
+  const id = "deal-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
+  const now = new Date().toISOString();
+  await pool.query(
+    `insert into deals (
+      id, title, url, image_url, category, post_text, generate, publish,
+      post_date, promotion_days, status, created_at, updated_at
+    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13::timestamptz)`,
+    [
+      id,
+      payload.title,
+      payload.url,
+      payload.imageUrl,
+      payload.category,
+      payload.postText,
+      payload.generate,
+      payload.publish,
+      payload.postDate ?? null,
+      payload.promotionDays,
+      payload.status,
+      now,
+      now,
+    ]
+  );
+  const res = await pool.query(`select * from deals where id = $1`, [id]);
+  return rowToDeal(res.rows[0] as DealRow);
+}
+
 export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Deal | null> {
   const pool = getPgPool();
 

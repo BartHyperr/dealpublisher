@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { addMonths, compareAsc, eachDayOfInterval, endOfMonth, endOfWeek, format, isAfter, parseISO, startOfMonth, startOfWeek, subMonths } from "date-fns";
+
+import { formatPromotionRangeLong, formatPromotionRangeShort } from "@/lib/format";
 import { ChevronLeft, ChevronRight, Facebook } from "lucide-react";
 import Image from "next/image";
 
@@ -109,7 +111,7 @@ export default function CalendarPage() {
               </TabsList>
             </Tabs>
           </div>
-          <Button>Nieuwe deal</Button>
+          <Button onClick={() => openModal(null)}>Nieuwe deal</Button>
         </div>
 
         {/* Legend */}
@@ -161,6 +163,9 @@ export default function CalendarPage() {
                       <div className="mt-1 text-xs text-slate-500">
                         {d.postDate ? format(parseISO(d.postDate), "EEEE dd MMM, HH:mm") : "—"}
                       </div>
+                      <div className="mt-0.5 text-[11px] text-slate-400">
+                        Looptijd: {formatPromotionRangeLong(d)}
+                      </div>
                     </div>
                     <div className="text-xs font-bold text-primary whitespace-nowrap">
                       {d.status}
@@ -207,12 +212,15 @@ export default function CalendarPage() {
                         <Facebook className="h-3.5 w-3.5" /> Post naar Deals-pagina
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className="text-xs font-bold text-primary">
                         {d.postDate ? format(parseISO(d.postDate), "dd MMM") : "—"}
                       </p>
                       <p className="text-[10px] text-slate-400">
                         {d.postDate ? format(parseISO(d.postDate), "HH:mm") : ""}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5" title="Looptijd">
+                        {formatPromotionRangeShort(d)}
                       </p>
                     </div>
                   </button>
