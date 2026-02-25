@@ -10,6 +10,7 @@ type DealPreviewPostProps = {
 };
 
 export function DealPreviewPost({ title, url, imageUrl, postText }: DealPreviewPostProps) {
+  const displayUrl = url && url !== "#" ? url : "https://www.fox.nl";
   const domain = "FOX.NL";
   const snippet = (postText || title || "").slice(0, 100) + (postText?.length > 100 ? "…" : "");
 
@@ -63,8 +64,11 @@ export function DealPreviewPost({ title, url, imageUrl, postText }: DealPreviewP
             <p className="text-sm font-semibold text-slate-900 line-clamp-1">
               {title || "Deal titel"}
             </p>
-            <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">
+            <p className="text-xs text-slate-600 mt-0.5 line-clamp-2 break-all">
               {snippet || "Bekijk het programma op fox.nl"}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-1 truncate" title={displayUrl}>
+              {displayUrl}
             </p>
           </div>
         </div>
