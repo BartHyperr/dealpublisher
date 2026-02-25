@@ -1,9 +1,11 @@
 # Netlify build config voor Hyperr Poster (Next.js 14)
-# Zorg dat je na een push een nieuwe deploy triggert (of: Clear cache and deploy).
+# Production branch: main (push naar main om te deployen).
+# Zie je oude versie? Netlify → Deploys → "Trigger deploy" → "Clear cache and deploy site".
 
 [build]
   command = "npm run build"
   publish = ".next"
+  environment = { NODE_VERSION = "20" }
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
