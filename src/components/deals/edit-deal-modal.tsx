@@ -29,7 +29,7 @@ const formSchema = z.object({
   url: z.string().optional(),
   imageUrl: z.string().optional(),
   postText: z.string().min(1, "Post tekst is verplicht"),
-  category: z.array(z.string()).default([]),
+  category: z.array(z.string()),
   postDate: z.string().optional(),
   promotionDays: z.union([
     z.literal(5),
