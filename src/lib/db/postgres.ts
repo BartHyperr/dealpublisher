@@ -19,9 +19,16 @@ export function getPgPool() {
     if (!connectionString) {
       throw new Error("DATABASE_URL is not set");
     }
+    const isLocalhost =
+      /^(?:postgres(?:ql)?:\/\/)[^\/]*@?(?:localhost|127\.0\.0\.1)(?::|\/|$)/i.test(
+        connectionString
+      ) || connectionString.includes("localhost");
     g.__DEALPUBLISHER_PG_POOL__ = new Pool({
       connectionString,
-      // Let op: ssl handling gaat via DATABASE_URL opties (sslmode) of PG env vars
+      ssl:
+        isLocalhost || connectionString.includes("sslmode=disable")
+          ? false
+          : { rejectUnauthorized: false },
     });
   }
   return g.__DEALPUBLISHER_PG_POOL__;

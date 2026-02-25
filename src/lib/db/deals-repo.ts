@@ -1,15 +1,23 @@
 import type { Deal, DealStatus } from "@/types/deal";
 import { getPgPool } from "@/lib/db/postgres";
 
+/** Brand voor filtering: alleen deals van dit merk (bijv. Fox). Zet DEALS_BRAND=fox in env. */
+const DEALS_BRAND = process.env.DEALS_BRAND ?? "";
+const DEALS_TABLE = process.env.DEALS_TABLE ?? "deals";
+
+/** Ondersteunt zowel lokaal schema (generate text) als extern schema (generate bool, brand, mainid, archive). */
 type DealRow = {
   id: string;
+  brand?: string | null;
+  mainid?: string | null;
   title: string;
   url: string;
   image_url: string;
   category: string[] | null;
   post_text: string | null;
-  generate: "Yes" | "No";
+  generate: "Yes" | "No" | boolean;
   publish: boolean;
+  archive?: boolean | null;
   post_date: string | null;
   promotion_days: Deal["promotionDays"];
   promotion_end_date: string | null;
@@ -20,15 +28,20 @@ type DealRow = {
 };
 
 function rowToDeal(row: DealRow): Deal {
+  const generate =
+    typeof row.generate === "boolean" ? (row.generate ? "Yes" : "No") : row.generate;
   return {
-    id: row.id,
+    id: String(row.id),
+    brand: row.brand ?? undefined,
+    mainid: row.mainid ?? undefined,
     title: row.title,
     url: row.url,
     imageUrl: row.image_url,
     category: row.category ?? [],
     postText: row.post_text ?? "",
-    generate: row.generate,
+    generate: generate === "Yes" ? "Yes" : "No",
     publish: row.publish,
+    archive: row.archive ?? undefined,
     postDate: row.post_date ?? undefined,
     promotionDays: row.promotion_days,
     promotionEndDate: row.promotion_end_date ?? undefined,
@@ -42,7 +55,7 @@ function rowToDeal(row: DealRow): Deal {
 export async function pgInitSchema() {
   const pool = getPgPool();
   await pool.query(`
-    create table if not exists deals (
+    create table if not exists ${DEALS_TABLE} (
       id text primary key,
       title text not null,
       url text not null,
@@ -60,14 +73,21 @@ export async function pgInitSchema() {
       updated_at timestamptz not null default now()
     );
 
-    create index if not exists deals_status_idx on deals (status);
-    create index if not exists deals_post_date_idx on deals (post_date);
+    create index if not exists deals_status_idx on ${DEALS_TABLE} (status);
+    create index if not exists deals_post_date_idx on ${DEALS_TABLE} (post_date);
   `);
 }
 
 export async function pgGetDeals(): Promise<Deal[]> {
   const pool = getPgPool();
-  const res = await pool.query(`select * from deals order by updated_at desc`);
+  if (DEALS_BRAND) {
+    const res = await pool.query(
+      `select * from ${DEALS_TABLE} where brand = $1 order by updated_at desc`,
+      [DEALS_BRAND]
+    );
+    return res.rows.map((r) => rowToDeal(r as DealRow));
+  }
+  const res = await pool.query(`select * from ${DEALS_TABLE} order by updated_at desc`);
   return res.rows.map((r) => rowToDeal(r as DealRow));
 }
 
@@ -82,14 +102,44 @@ type CreateDealPayload = {
   postDate?: string;
   status: DealStatus;
   generate: "Yes" | "No";
+  mainid?: string;
 };
 
 export async function pgCreateDeal(payload: CreateDealPayload): Promise<Deal> {
   const pool = getPgPool();
-  const id = "deal-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
   const now = new Date().toISOString();
+
+  if (DEALS_BRAND) {
+    const generateBool = payload.generate === "Yes";
+    const res = await pool.query(
+      `insert into ${DEALS_TABLE} (
+        brand, mainid, title, url, image_url, category, post_text, generate, publish,
+        post_date, promotion_days, status, created_at, updated_at
+      ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11, $12, $13::timestamptz, $14::timestamptz)
+      returning *`,
+      [
+        DEALS_BRAND,
+        payload.mainid ?? null,
+        payload.title,
+        payload.url,
+        payload.imageUrl,
+        payload.category,
+        payload.postText,
+        generateBool,
+        payload.publish,
+        payload.postDate ?? null,
+        payload.promotionDays,
+        payload.status,
+        now,
+        now,
+      ]
+    );
+    return rowToDeal(res.rows[0] as DealRow);
+  }
+
+  const id = "deal-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
   await pool.query(
-    `insert into deals (
+    `insert into ${DEALS_TABLE} (
       id, title, url, image_url, category, post_text, generate, publish,
       post_date, promotion_days, status, created_at, updated_at
     ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13::timestamptz)`,
@@ -109,7 +159,7 @@ export async function pgCreateDeal(payload: CreateDealPayload): Promise<Deal> {
       now,
     ]
   );
-  const res = await pool.query(`select * from deals where id = $1`, [id]);
+  const res = await pool.query(`select * from ${DEALS_TABLE} where id = $1`, [id]);
   return rowToDeal(res.rows[0] as DealRow);
 }
 
@@ -140,12 +190,16 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
     updates.push(
       `${f.col} = $${i}${f.cast ?? ""}`
     );
-    values.push(patch[f.key]);
+    if (f.key === "generate" && DEALS_BRAND) {
+      values.push(patch.generate === "Yes");
+    } else {
+      values.push(patch[f.key]);
+    }
     i++;
   }
 
   if (!updates.length) {
-    const existing = await pool.query(`select * from deals where id = $1`, [id]);
+    const existing = await pool.query(`select * from ${DEALS_TABLE} where id = $1`, [id]);
     return existing.rowCount ? rowToDeal(existing.rows[0] as DealRow) : null;
   }
 
@@ -153,7 +207,7 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
   values.push(id);
 
   const res = await pool.query(
-    `update deals set ${updates.join(", ")} where id = $${values.length} returning *`,
+    `update ${DEALS_TABLE} set ${updates.join(", ")} where id = $${values.length} returning *`,
     values
   );
   return res.rowCount ? rowToDeal(res.rows[0] as DealRow) : null;
@@ -162,7 +216,7 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
 export async function pgPublishNow(id: string): Promise<Deal | null> {
   const pool = getPgPool();
   const res = await pool.query(
-    `update deals
+    `update ${DEALS_TABLE}
      set publish = true,
          status = $2::text,
          post_date = now(),
@@ -185,6 +239,8 @@ export type DealStats = {
 
 export async function pgGetDealStats(): Promise<DealStats> {
   const pool = getPgPool();
+  const whereClause = DEALS_BRAND ? ` where brand = $1` : "";
+  const params = DEALS_BRAND ? [DEALS_BRAND] : [];
   const res = await pool.query<{
     total: string;
     actief: string;
@@ -192,16 +248,17 @@ export async function pgGetDealStats(): Promise<DealStats> {
     ingepland: string;
     gepubliceerd: string;
     beeindigd: string;
-  }>(`
-    select
+  }>(
+    `select
       count(*)::text as total,
       count(*) filter (where status in ('SCHEDULED','PUBLISHED'))::text as actief,
       count(*) filter (where status = 'DRAFT')::text as concept,
       count(*) filter (where status = 'SCHEDULED')::text as ingepland,
       count(*) filter (where status = 'PUBLISHED')::text as gepubliceerd,
       count(*) filter (where status = 'ENDED')::text as beeindigd
-    from deals
-  `);
+    from ${DEALS_TABLE}${whereClause}`,
+    params
+  );
 
   const row = res.rows[0];
   const n = (v: string | undefined) => Number(v ?? "0");

@@ -2,14 +2,16 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Database, AlertTriangle, Copy, Mail } from "lucide-react";
+import { CheckCircle2, Database, AlertTriangle, Copy, Mail, Sparkles } from "lucide-react";
 
 import type { NotificationSettings } from "@/types/notifications";
 import { NOTIFY_DAYS_OPTIONS } from "@/types/notifications";
+import type { PromptSettings } from "@/lib/db/prompt-repo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 type DbStatus = {
   configured: boolean;
@@ -48,6 +50,12 @@ async function fetchNotificationSettings(): Promise<NotificationSettings> {
   return res.json() as Promise<NotificationSettings>;
 }
 
+async function fetchPromptSettings(): Promise<PromptSettings> {
+  const res = await fetch("/api/settings/prompt", { cache: "no-store" });
+  if (!res.ok) throw new Error("Prompt-instellingen ophalen mislukt");
+  return res.json() as Promise<PromptSettings>;
+}
+
 export default function SettingsPage() {
   const [status, setStatus] = React.useState<DbStatus | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -56,6 +64,9 @@ export default function SettingsPage() {
   const [notif, setNotif] = React.useState<NotificationSettings | null>(null);
   const [notifLoading, setNotifLoading] = React.useState(true);
   const [notifSaving, setNotifSaving] = React.useState(false);
+  const [promptSettings, setPromptSettings] = React.useState<PromptSettings | null>(null);
+  const [promptLoading, setPromptLoading] = React.useState(true);
+  const [promptSaving, setPromptSaving] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -93,11 +104,24 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const refreshPrompt = React.useCallback(async () => {
+    setPromptLoading(true);
+    try {
+      const s = await fetchPromptSettings();
+      setPromptSettings(s);
+    } catch {
+      toast.error("Kon prompt-instellingen niet ophalen");
+    } finally {
+      setPromptLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
     void refresh();
     void refreshStats();
     void refreshNotif();
-  }, [refresh, refreshStats, refreshNotif]);
+    void refreshPrompt();
+  }, [refresh, refreshStats, refreshNotif, refreshPrompt]);
 
   const saveNotif = async () => {
     if (!notif) return;
@@ -121,6 +145,26 @@ export default function SettingsPage() {
       toast.error("Kon notificaties niet opslaan");
     } finally {
       setNotifSaving(false);
+    }
+  };
+
+  const savePrompt = async () => {
+    if (promptSettings === null) return;
+    setPromptSaving(true);
+    try {
+      const res = await fetch("/api/settings/prompt", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ systemPrompt: promptSettings.systemPrompt }),
+      });
+      if (!res.ok) throw new Error("Opslaan mislukt");
+      const updated = (await res.json()) as PromptSettings;
+      setPromptSettings(updated);
+      toast.success("AI-prompt opgeslagen");
+    } catch {
+      toast.error("Kon AI-prompt niet opslaan");
+    } finally {
+      setPromptSaving(false);
     }
   };
 
@@ -406,6 +450,53 @@ create index if not exists deals_post_date_idx on deals (post_date);`;
             </div>
           ) : (
             <p className="mt-4 text-sm text-slate-500">Kon instellingen niet laden.</p>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-slate-900">AI-prompt</h2>
+              <p className="text-sm text-slate-500">
+                Systeemprompt voor de knop &quot;AI Regenerate&quot; op de dealpagina. Gebruik variabelen zoals Titel, Url en Omschrijving in je instructies.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={refreshPrompt}
+              disabled={promptLoading}
+            >
+              Vernieuw
+            </Button>
+          </div>
+
+          {promptLoading ? (
+            <p className="mt-4 text-sm text-slate-500">Prompt laden…</p>
+          ) : promptSettings ? (
+            <div className="mt-6 space-y-4">
+              <label className="block text-sm font-bold text-slate-900">
+                Systeemprompt
+              </label>
+              <Textarea
+                value={promptSettings.systemPrompt}
+                onChange={(e) =>
+                  setPromptSettings({ ...promptSettings, systemPrompt: e.target.value })
+                }
+                placeholder="Instructies voor de AI..."
+                className="min-h-[280px] font-mono text-sm bg-white border border-slate-200"
+              />
+              <p className="text-xs text-slate-500">
+                Laat leeg om de standaard Fox-prompt te gebruiken. Bij Postgres wordt de prompt in de database opgeslagen; anders in het geheugen.
+              </p>
+              <Button onClick={savePrompt} disabled={promptSaving}>
+                {promptSaving ? "Opslaan…" : "AI-prompt opslaan"}
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">Kon prompt niet laden.</p>
           )}
         </Card>
 

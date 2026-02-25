@@ -1,35 +1,59 @@
 "use client";
 
-import { Bell, Plus, Search } from "lucide-react";
+import * as React from "react";
+import { ArrowDown, ArrowUp, Bell, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DealCard } from "@/components/deals/deal-card";
-import { cn } from "@/lib/utils";
-import { useDealsStore, useFilteredDeals } from "@/store/deals-store";
+import { useDealsStore } from "@/store/deals-store";
+
+const PAGE_SIZE = 12;
+type SortKey = "title" | "updatedAt" | "postDate" | "status";
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "title", label: "Titel" },
+  { value: "updatedAt", label: "Laatst gewijzigd" },
+  { value: "postDate", label: "Publicatiedatum" },
+  { value: "status", label: "Status" },
+];
 
 export default function SearchSchedulePage() {
-  const deals = useFilteredDeals();
+  const deals = useDealsStore((s) => s.deals);
   const loading = useDealsStore((s) => s.loading);
-  const filters = useDealsStore((s) => s.filters);
-  const setFilters = useDealsStore((s) => s.actions.setFilters);
   const openModal = useDealsStore((s) => s.actions.openModal);
 
-  const categories = [
-    { id: "Alle deals", label: "Alle deals" },
-    { id: "Stedentrip", label: "🏙️ Stedentrip" },
-    { id: "Vakantiepark", label: "🌲 Vakantiepark" },
-    { id: "Wellness", label: "💆 Wellness" },
-    { id: "Last Minute", label: "🏖️ Last Minute" },
-    { id: "Theme Parks", label: "🎢 Pretparken" },
-    { id: "Coastal", label: "⛵ Kust" },
-  ];
+  const [sortBy, setSortBy] = React.useState<SortKey>("updatedAt");
+  const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
+  const [page, setPage] = React.useState(1);
+
+  const sortedDeals = React.useMemo(() => {
+    const list = [...deals];
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "title") cmp = (a.title ?? "").localeCompare(b.title ?? "");
+      else if (sortBy === "updatedAt") cmp = (a.updatedAt ?? "").localeCompare(b.updatedAt ?? "");
+      else if (sortBy === "postDate") {
+        const ad = a.postDate ?? "";
+        const bd = b.postDate ?? "";
+        cmp = ad.localeCompare(bd);
+      } else if (sortBy === "status") cmp = (a.status ?? "").localeCompare(b.status ?? "");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return list;
+  }, [deals, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const paginatedDeals = sortedDeals.slice(start, start + PAGE_SIZE);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [sortBy, sortDir]);
 
   return (
     <>
       <header className="bg-white border-b border-primary/10 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h1 className="text-2xl font-bold text-slate-900">
               Deals zoeken &amp; inplannen
             </h1>
@@ -45,42 +69,28 @@ export default function SearchSchedulePage() {
             </div>
           </div>
 
-          <div className="relative max-w-2xl">
-            <span className="absolute inset-y-0 left-4 flex items-center text-slate-400">
-              <Search className="h-4 w-4" />
-            </span>
-            <Input
-              className="pl-11"
-              placeholder="Zoek bestemmingen, hotels of deal-ID's..."
-              value={filters.query}
-              onChange={(e) => setFilters({ query: e.target.value })}
-            />
-          </div>
-
-          <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">
-              Filters:
-            </span>
-            {categories.map((c) => {
-              const selected =
-                filters.categories.includes(c.id) ||
-                (c.id === "Alle deals" && filters.categories.includes("Alle deals"));
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setFilters({ categories: [c.id] })}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                    selected
-                      ? "bg-primary text-white"
-                      : "bg-white border border-primary/10 text-slate-600 hover:border-primary/40"
-                  )}
-                >
-                  {c.label}
-                </button>
-              );
-            })}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-slate-600">Sorteren op:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              className="gap-1.5"
+            >
+              {sortDir === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+              {sortDir === "asc" ? "Oplopend" : "Aflopend"}
+            </Button>
           </div>
         </div>
       </header>
@@ -90,15 +100,43 @@ export default function SearchSchedulePage() {
           {loading ? (
             <div className="text-sm text-slate-500">Deals laden…</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {deals.map((deal) => (
-                <DealCard
-                  key={deal.id}
-                  deal={deal}
-                  onClick={() => openModal(deal.id)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {paginatedDeals.map((deal) => (
+                  <DealCard
+                    key={deal.id}
+                    deal={deal}
+                    onClick={() => openModal(deal.id)}
+                  />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Vorige
+                  </Button>
+                  <span className="px-4 text-sm text-slate-600">
+                    Pagina {page} van {totalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    Volgende
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

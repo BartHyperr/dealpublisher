@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { DealStatusBadge } from "@/components/deals/deal-status-badge";
+import { DealPreviewPost } from "@/components/deals/deal-preview-post";
 
 const promotionDaysValues = [5, 7, 14, 21, 30] as const;
 const DEFAULT_IMAGE =
@@ -28,7 +29,7 @@ const formSchema = z.object({
   url: z.string().optional(),
   imageUrl: z.string().optional(),
   postText: z.string().min(1, "Post tekst is verplicht"),
-  category: z.array(z.string()).min(1, "Kies minimaal 1 categorie"),
+  category: z.array(z.string()).default([]),
   postDate: z.string().optional(),
   promotionDays: z.union([
     z.literal(5),
@@ -117,11 +118,11 @@ export function EditDealModal() {
   }, [deal, isNew, form]);
 
   const postText = form.watch("postText");
-  const categories = form.watch("category");
+  const title = form.watch("title");
+  const url = form.watch("url");
+  const imageUrl = form.watch("imageUrl");
   const promotionDays = form.watch("promotionDays");
   const publish = form.watch("publish");
-
-  const [newCat, setNewCat] = React.useState("");
 
   const onSubmit = async (values: FormValues) => {
     const postDateIso = values.postDate ? values.postDate : undefined;
@@ -191,25 +192,6 @@ export function EditDealModal() {
     if (text) form.setValue("postText", text, { shouldDirty: true });
   };
 
-  const addCategory = () => {
-    const trimmed = newCat.trim();
-    if (!trimmed) return;
-    if (categories.includes(trimmed)) {
-      setNewCat("");
-      return;
-    }
-    form.setValue("category", [...categories, trimmed], { shouldDirty: true });
-    setNewCat("");
-  };
-
-  const removeCategory = (c: string) => {
-    form.setValue(
-      "category",
-      categories.filter((x) => x !== c),
-      { shouldDirty: true }
-    );
-  };
-
   return (
     <Dialog open={modal.open} onOpenChange={(open) => (!open ? closeModal() : null)}>
       <DialogContent className="p-0 overflow-y-auto">
@@ -241,7 +223,7 @@ export function EditDealModal() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-bold text-slate-900">
-                      Facebook post tekst
+                      Post caption
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
                       Karakters: {postText?.length ?? 0}
@@ -270,56 +252,16 @@ export function EditDealModal() {
                     </p>
                   ) : null}
                 </div>
-
-                <div className="mt-6">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-slate-900">Categories</p>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={newCat}
-                        onChange={(e) => setNewCat(e.target.value)}
-                        placeholder="Categorie toevoegen…"
-                        className="h-9 w-44 bg-white border border-slate-200"
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={addCategory}
-                      >
-                        Toevoegen
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {categories.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => removeCategory(c)}
-                        className="px-3 py-1.5 rounded-full bg-white border border-primary/10 text-slate-700 text-sm font-medium hover:border-primary/40 transition-all"
-                        title="Verwijderen"
-                      >
-                        {c}
-                      </button>
-                    ))}
-                    {!categories.length ? (
-                      <p className="text-xs text-slate-500">
-                        Nog geen categorieën.
-                      </p>
-                    ) : null}
-                  </div>
-                  {form.formState.errors.category ? (
-                    <p className="mt-2 text-xs font-semibold text-rose-600">
-                      {form.formState.errors.category.message}
-                    </p>
-                  ) : null}
-                </div>
               </div>
 
               {/* Right */}
-              <div className="p-4 sm:p-6">
+              <div className="p-4 sm:p-6 flex flex-col gap-4">
+                <DealPreviewPost
+                  title={title ?? ""}
+                  url={url ?? ""}
+                  imageUrl={imageUrl ?? DEFAULT_IMAGE}
+                  postText={postText ?? ""}
+                />
                 {isNew ? (
                   <>
                     <p className="text-sm font-bold text-slate-900 mb-2">Titel</p>
@@ -333,12 +275,6 @@ export function EditDealModal() {
                         {form.formState.errors.title.message}
                       </p>
                     ) : null}
-                    <p className="text-sm font-bold text-slate-900 mb-2">Link (URL)</p>
-                    <Input
-                      {...form.register("url")}
-                      placeholder="https://..."
-                      className="mb-4 bg-white border border-slate-200"
-                    />
                     <p className="text-sm font-bold text-slate-900 mb-2">Afbeelding-URL</p>
                     <Input
                       {...form.register("imageUrl")}
@@ -357,53 +293,24 @@ export function EditDealModal() {
                       </div>
                     </div>
                   </>
-                ) : deal ? (
-                <div className="rounded-2xl border border-primary/10 overflow-hidden bg-white shadow-sm">
-                  <div className="relative h-44">
-                    <Image
-                      src={deal.imageUrl}
-                      alt={deal.title}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute top-3 left-3">
-                      <span className="bg-slate-900/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg">
-                        Actieve deal
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-sm font-bold text-slate-900 line-clamp-1">
-                      {deal.title}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500 break-all">
-                      {deal.url}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="text-xs text-slate-500">
-                        Status:{" "}
-                        <span className="font-semibold text-slate-900">
-                          {deal.status}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        Days remaining:{" "}
-                        <span className="font-semibold text-slate-900">
-                          {deal.daysRemaining ?? "—"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 ) : null}
 
-                <div className="mt-6">
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                    Facebook post inplannen
+                  </p>
+                  <p className="text-sm font-bold text-slate-900 mb-2">Link</p>
+                  <Input
+                    {...form.register("url")}
+                    placeholder="https://..."
+                    className="mb-4 bg-white border border-slate-200"
+                  />
                   <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
                     <CalendarDays className="h-4 w-4 text-primary" />
-                    Datum online
+                    Publish date
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    Huidig: {deal ? formatPostDateLong(deal.postDate) : "Nog niet ingepland"}
+                    {deal ? `Huidig: ${formatPostDateLong(deal.postDate)}` : "Kies datum en tijd voor de Facebook-post"}
                   </p>
                   <Input
                     type="datetime-local"
@@ -465,7 +372,7 @@ export function EditDealModal() {
               >
                 Annuleren
               </Button>
-              <Button type="submit">Verzenden</Button>
+              <Button type="submit">Inplannen</Button>
             </DialogFooter>
           </form>
         )}

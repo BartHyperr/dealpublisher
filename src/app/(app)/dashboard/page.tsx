@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format, isSameDay, parseISO } from "date-fns";
-import { Facebook } from "lucide-react";
+import { Facebook, Sparkles } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,17 +37,44 @@ async function fetchDeals(): Promise<Deal[]> {
   return json.deals;
 }
 
+type AiUsage = {
+  todayRequests: number;
+  todayCostUsd: number;
+  limitUsd: number;
+};
+
+async function fetchAiUsage(): Promise<AiUsage | null> {
+  const res = await fetch("/api/settings/ai-usage", { cache: "no-store" });
+  if (!res.ok) return null;
+  const j = (await res.json()) as {
+    todayRequests: number;
+    todayCostUsd: number;
+    limitUsd: number;
+  };
+  return {
+    todayRequests: j.todayRequests ?? 0,
+    todayCostUsd: j.todayCostUsd ?? 0,
+    limitUsd: j.limitUsd ?? 10,
+  };
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = React.useState<DealStats | null>(null);
   const [deals, setDeals] = React.useState<Deal[]>([]);
+  const [aiUsage, setAiUsage] = React.useState<AiUsage | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
     try {
-      const [s, d] = await Promise.all([fetchStats(), fetchDeals()]);
+      const [s, d, ai] = await Promise.all([
+        fetchStats(),
+        fetchDeals(),
+        fetchAiUsage(),
+      ]);
       setStats(s);
       setDeals(d);
+      setAiUsage(ai);
     } finally {
       setLoading(false);
     }
@@ -139,6 +166,27 @@ export default function DashboardPage() {
               </p>
               <p className="mt-2 text-2xl font-extrabold text-slate-900">
                 {stats?.beeindigd ?? 0}
+              </p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                AI generaties vandaag
+              </p>
+              <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                {aiUsage?.todayRequests ?? 0}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">credits</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                AI kosten vandaag
+              </p>
+              <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                ${(aiUsage?.todayCostUsd ?? 0).toFixed(2)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                limiet ${(aiUsage?.limitUsd ?? 10).toFixed(0)}/dag
               </p>
             </Card>
           </div>

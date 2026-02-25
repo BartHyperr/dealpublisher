@@ -88,10 +88,13 @@ async function apiRegenerate(deal: Deal): Promise<string> {
     body: JSON.stringify({
       title: deal.title,
       url: deal.url,
-      categories: deal.category,
+      postText: deal.postText ?? "",
     }),
   });
-  if (!res.ok) throw new Error("AI regenerate failed");
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "AI regenerate failed");
+  }
   const json = (await res.json()) as { text: string };
   return json.text;
 }

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:clean": "rm -rf .next && next dev",
+    "dev:safe": "node -e \"const v=process.versions.node;if(v.startsWith('22')){console.error('\\n⚠️  Node 22 veroorzaakt de fout \\\"missing bootstrap script\\\". Gebruik Node 20:\\n   nvm use 20\\n   npm run dev\\n');process.exit(1);}\" && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -28,6 +29,7 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.563.0",
     "next": "^14.2.35",
+    "openai": "^6.25.0",
     "pg": "^8.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
