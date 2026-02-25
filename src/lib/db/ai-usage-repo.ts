@@ -22,7 +22,7 @@ export type TodayAiUsage = {
   limitUsd: number;
 };
 
-let inMemoryToday: TodayAiUsage = {
+const inMemoryToday: TodayAiUsage = {
   requests: 0,
   promptTokens: 0,
   completionTokens: 0,
