@@ -4,6 +4,8 @@ import { getPgPool } from "@/lib/db/postgres";
 /** Brand voor filtering: alleen deals van dit merk (bijv. Fox). Zet DEALS_BRAND=fox in env. */
 const DEALS_BRAND = process.env.DEALS_BRAND ?? "";
 const DEALS_TABLE = process.env.DEALS_TABLE ?? "deals";
+/** Als je tabel generate als boolean heeft (niet text 'Yes'/'No'), zet DEALS_GENERATE_BOOL=true. */
+const DEALS_GENERATE_BOOL = process.env.DEALS_GENERATE_BOOL === "true";
 
 /** Ondersteunt zowel lokaal schema (generate text) als extern schema (generate bool, brand, mainid, archive). */
 type DealRow = {
@@ -27,28 +29,37 @@ type DealRow = {
   updated_at: string;
 };
 
+const PROMOTION_DAYS_VALID = [5, 7, 14, 21, 30] as const;
+const STATUS_VALID = ["DRAFT", "SCHEDULED", "PUBLISHED", "ENDED"] as const;
+
 function rowToDeal(row: DealRow): Deal {
   const generate =
     typeof row.generate === "boolean" ? (row.generate ? "Yes" : "No") : row.generate;
+  const promotionDays = row.promotion_days != null && PROMOTION_DAYS_VALID.includes(row.promotion_days)
+    ? row.promotion_days
+    : 7;
+  const status = row.status && STATUS_VALID.includes(row.status as Deal["status"])
+    ? (row.status as Deal["status"])
+    : "DRAFT";
   return {
-    id: String(row.id),
+    id: String(row.id ?? row.mainid ?? ""),
     brand: row.brand ?? undefined,
     mainid: row.mainid ?? undefined,
-    title: row.title,
-    url: row.url,
-    imageUrl: row.image_url,
-    category: row.category ?? [],
-    postText: row.post_text ?? "",
+    title: String(row.title ?? ""),
+    url: String(row.url ?? ""),
+    imageUrl: String(row.image_url ?? ""),
+    category: Array.isArray(row.category) ? row.category : [],
+    postText: String(row.post_text ?? ""),
     generate: generate === "Yes" ? "Yes" : "No",
-    publish: row.publish,
+    publish: Boolean(row.publish),
     archive: row.archive ?? undefined,
     postDate: row.post_date ?? undefined,
-    promotionDays: row.promotion_days,
+    promotionDays,
     promotionEndDate: row.promotion_end_date ?? undefined,
     daysRemaining: row.days_remaining ?? undefined,
-    status: row.status,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    status,
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
   };
 }
 
@@ -150,7 +161,7 @@ export async function pgCreateDeal(payload: CreateDealPayload): Promise<Deal> {
       payload.imageUrl,
       payload.category,
       payload.postText,
-      payload.generate,
+      DEALS_GENERATE_BOOL ? payload.generate === "Yes" : payload.generate,
       payload.publish,
       payload.postDate ?? null,
       payload.promotionDays,
@@ -165,8 +176,8 @@ export async function pgCreateDeal(payload: CreateDealPayload): Promise<Deal> {
 
 export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Deal | null> {
   const pool = getPgPool();
+  const idColumns: string[] = DEALS_BRAND ? ["id", "mainid"] : ["id"];
 
-  // Minimal safe patch: alleen velden die we gebruiken in UI flows.
   const fields: Array<{ col: string; key: keyof Deal; cast?: string }> = [
     { col: "title", key: "title" },
     { col: "url", key: "url" },
@@ -182,50 +193,85 @@ export async function pgPatchDeal(id: string, patch: Partial<Deal>): Promise<Dea
     { col: "status", key: "status" },
   ];
 
-  const updates: string[] = [];
-  const values: unknown[] = [];
-  let i = 1;
-  for (const f of fields) {
-    if (patch[f.key] === undefined) continue;
-    updates.push(
-      `${f.col} = $${i}${f.cast ?? ""}`
-    );
-    if (f.key === "generate" && DEALS_BRAND) {
-      values.push(patch.generate === "Yes");
-    } else {
-      values.push(patch[f.key]);
+  const runUpdate = (fieldsToUse: typeof fields, setUpdatedAt = true, idCol: string) => {
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let i = 1;
+    for (const f of fieldsToUse) {
+      if (patch[f.key] === undefined) continue;
+      updates.push(
+        `${f.col} = $${i}${f.cast ?? ""}`
+      );
+      if (f.key === "generate" && (DEALS_BRAND || DEALS_GENERATE_BOOL)) {
+        values.push(patch.generate === "Yes");
+      } else {
+        values.push(patch[f.key]);
+      }
+      i++;
     }
-    i++;
+    if (!updates.length) return null;
+    if (setUpdatedAt) updates.push(`updated_at = now()`);
+    values.push(id);
+    return pool.query(
+      `update ${DEALS_TABLE} set ${updates.join(", ")} where ${idCol} = $${values.length} returning *`,
+      values
+    );
+  };
+
+  for (const idCol of idColumns) {
+    try {
+      const res = await runUpdate(fields, true, idCol);
+      if (res && res.rowCount && res.rowCount > 0) {
+        return rowToDeal(res.rows[0] as DealRow);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/updated_at|does not exist/i.test(msg)) {
+        try {
+          const res = await runUpdate(fields, false, idCol);
+          if (res && res.rowCount && res.rowCount > 0) {
+            return rowToDeal(res.rows[0] as DealRow);
+          }
+        } catch {
+          // try next id column
+        }
+      } else {
+        throw err;
+      }
+    }
   }
 
-  if (!updates.length) {
-    const existing = await pool.query(`select * from ${DEALS_TABLE} where id = $1`, [id]);
-    return existing.rowCount ? rowToDeal(existing.rows[0] as DealRow) : null;
+  for (const idCol of idColumns) {
+    const existing = await pool.query(
+      `select * from ${DEALS_TABLE} where ${idCol} = $1`,
+      [id]
+    );
+    if (existing.rowCount && existing.rowCount > 0) {
+      return rowToDeal(existing.rows[0] as DealRow);
+    }
   }
-
-  updates.push(`updated_at = now()`);
-  values.push(id);
-
-  const res = await pool.query(
-    `update ${DEALS_TABLE} set ${updates.join(", ")} where id = $${values.length} returning *`,
-    values
-  );
-  return res.rowCount ? rowToDeal(res.rows[0] as DealRow) : null;
+  return null;
 }
 
 export async function pgPublishNow(id: string): Promise<Deal | null> {
   const pool = getPgPool();
-  const res = await pool.query(
-    `update ${DEALS_TABLE}
-     set publish = true,
-         status = $2::text,
-         post_date = now(),
-         updated_at = now()
-     where id = $1
-     returning *`,
-    [id, "PUBLISHED" satisfies DealStatus]
-  );
-  return res.rowCount ? rowToDeal(res.rows[0] as DealRow) : null;
+  const idColumns: string[] = DEALS_BRAND ? ["id", "mainid"] : ["id"];
+  for (const idCol of idColumns) {
+    const res = await pool.query(
+      `update ${DEALS_TABLE}
+       set publish = true,
+           status = $2::text,
+           post_date = now(),
+           updated_at = now()
+       where ${idCol} = $1
+       returning *`,
+      [id, "PUBLISHED" satisfies DealStatus]
+    );
+    if (res.rowCount && res.rowCount > 0) {
+      return rowToDeal(res.rows[0] as DealRow);
+    }
+  }
+  return null;
 }
 
 export type DealStats = {

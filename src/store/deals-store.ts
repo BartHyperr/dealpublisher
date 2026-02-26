@@ -65,9 +65,12 @@ async function apiPatchDeal(dealId: string, patch: Partial<Deal>): Promise<Deal>
     headers: { "content-type": "application/json" },
     body: JSON.stringify(patch),
   });
-  if (!res.ok) throw new Error("Failed to update deal");
-  const json = (await res.json()) as { deal: Deal };
-  return json.deal;
+  const data = (await res.json().catch(() => ({}))) as { deal?: Deal; error?: string };
+  if (!res.ok) {
+    throw new Error(data?.error ?? "Update mislukt");
+  }
+  if (!data?.deal) throw new Error("Geen deal in response");
+  return data.deal;
 }
 
 async function apiPublishDeal(dealId: string): Promise<Deal> {
@@ -89,14 +92,21 @@ async function apiRegenerate(deal: Deal): Promise<string> {
       title: deal.title,
       url: deal.url,
       postText: deal.postText ?? "",
+      promotionDays: deal.promotionDays,
     }),
   });
+  const data = (await res.json().catch(() => ({}))) as { error?: string; text?: string };
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error ?? "AI regenerate failed");
+    const msg = data?.error ?? `Server error ${res.status}`;
+    console.error("[AI regenerate] API error:", res.status, msg);
+    throw new Error(msg);
   }
-  const json = (await res.json()) as { text: string };
-  return json.text;
+  const text = typeof data?.text === "string" ? data.text : "";
+  if (!text) {
+    console.warn("[AI regenerate] Empty text in response", data);
+    throw new Error("Geen tekst ontvangen van AI. Probeer opnieuw.");
+  }
+  return text;
 }
 
 function upsertDeal(list: Deal[], updated: Deal) {
@@ -234,12 +244,16 @@ export const useDealsStore = create<DealsState>((set, get) => ({
       try {
         toast.message("AI genereert tekst…");
         const text = await apiRegenerate(deal);
-        const updated = await apiPatchDeal(dealId, { postText: text, generate: "Yes" });
+        const updated = await apiPatchDeal(dealId, {
+          postText: text,
+          generate: "Yes",
+        });
         set((s) => ({ deals: upsertDeal(s.deals, updated) }));
         toast.success("Tekst vernieuwd");
         return text;
-      } catch {
-        toast.error("AI regeneratie mislukt");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "AI regeneratie mislukt";
+        toast.error(msg);
         return null;
       }
     },

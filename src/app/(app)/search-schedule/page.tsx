@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDown, ArrowUp, Bell, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Bell, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DealCard } from "@/components/deals/deal-card";
-import { useDealsStore } from "@/store/deals-store";
+import { Input } from "@/components/ui/input";
+import { useDealsStore, useFilteredDeals } from "@/store/deals-store";
 
 const PAGE_SIZE = 12;
 type SortKey = "title" | "updatedAt" | "postDate" | "status";
@@ -17,9 +18,11 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 export default function SearchSchedulePage() {
-  const deals = useDealsStore((s) => s.deals);
   const loading = useDealsStore((s) => s.loading);
   const openModal = useDealsStore((s) => s.actions.openModal);
+  const filters = useDealsStore((s) => s.filters);
+  const setFilters = useDealsStore((s) => s.actions.setFilters);
+  const deals = useFilteredDeals();
 
   const [sortBy, setSortBy] = React.useState<SortKey>("updatedAt");
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
@@ -47,7 +50,7 @@ export default function SearchSchedulePage() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [sortBy, sortDir]);
+  }, [sortBy, sortDir, filters.query]);
 
   return (
     <>
@@ -67,6 +70,17 @@ export default function SearchSchedulePage() {
                 Nieuwe deal
               </Button>
             </div>
+          </div>
+
+          <div className="mt-4 relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Input
+              type="search"
+              placeholder="Zoeken op bestemming, hotel of deal-ID…"
+              value={filters.query}
+              onChange={(e) => setFilters({ query: e.target.value })}
+              className="pl-10"
+            />
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">

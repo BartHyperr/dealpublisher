@@ -22,6 +22,7 @@ Altijd toevoegen:
 
 Hashtags (exact zo plaatsen):
 #foxgaatverder #foxrondreizen #foxexpertinrondreizen #foxreizen #rondreis #reizen #reisinspiratie
+Voeg de promotieduur toe als hashtag (bijv. #5dagen, #7dagen, #14dagen, #21dagen of #30dagen), afhankelijk van de gegeven promotieduur.
 {{12.2}}
 
 OUTPUTREGELS:
