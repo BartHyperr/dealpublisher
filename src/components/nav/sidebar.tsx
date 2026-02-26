@@ -1,11 +1,13 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   HelpCircle,
   LayoutDashboard,
+  LogOut,
   Rocket,
   Search,
   Settings,
@@ -25,6 +27,19 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [authEnabled, setAuthEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/auth/status", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d: { enabled?: boolean }) => setAuthEnabled(Boolean(d?.enabled)))
+      .catch(() => setAuthEnabled(false));
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  };
 
   return (
     <aside className="w-64 bg-white border-r border-primary/10 flex flex-col h-full z-20">
@@ -61,7 +76,17 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="mt-auto p-6 border-t border-primary/5">
+      <div className="mt-auto p-6 border-t border-primary/5 space-y-2">
+        {authEnabled && (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-primary/5 hover:text-primary transition-all text-sm font-medium"
+          >
+            <LogOut className="h-5 w-5" />
+            Uitloggen
+          </button>
+        )}
         <div className="bg-primary/5 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden" />

@@ -12,6 +12,21 @@ npm run dev
 
 Open `http://localhost:3000` (landt standaard op `/search-schedule`).
 
+### Loginscherm (optioneel)
+
+Om de app te beveiligen met een wachtwoord:
+
+1. In `.env.local`:
+   ```env
+   LOGIN_USERNAME=admin
+   LOGIN_PASSWORD=jouw-geheim-wachtwoord
+   ```
+   Optioneel: `LOGIN_SECRET` voor de sessie-cookie (anders wordt `LOGIN_PASSWORD` gebruikt). Zet je alleen `LOGIN_PASSWORD`, dan volstaat het wachtwoord (gebruikersnaam mag leeg).
+
+2. Herstart de dev-server. Bezoekers worden dan naar `/login` gestuurd; na correct wachtwoord komen ze in de app. In de zijbalk staat **Uitloggen**.
+
+Zet je `LOGIN_PASSWORD` niet, dan is er geen loginscherm en is de app open.
+
 ### Node versie (belangrijk)
 
 Gebruik **Node 20 LTS**. Next.js 14 dev-mode is instabiel op Node 22 (kan leiden tot ontbrekende `/_next/static/*` assets en een “verdwenen” frontend).
@@ -61,18 +76,51 @@ npm run dev
 
    - **Let op:** de externe tabel heeft al het juiste schema (o.a. `id`, `brand`, `mainid`, `generate` boolean). Je hoeft **geen** "Initialiseer schema" te doen op de externe database.
 
-## Deploy op Netlify – database en env
+## Database koppelen aan Netlify
 
-`.env.local` wordt **niet** meegedeployed. Op Netlify moet je dezelfde variabelen in de **Environment variables** van de site zetten, anders gebruikt de app mock data en geen Postgres.
+De app op Netlify praat direct met **jouw** Postgres-database. Die kan overal draaien: **Google Cloud**, Railway, een andere server, etc. Je koppelt de database niet aan Railway – je geeft Netlify alleen de connection string van je bestaande database.
 
-1. **Netlify** → jouw site → **Site configuration** → **Environment variables** (of: **Build & deploy** → **Environment**).
+### Database in Google Cloud (Cloud SQL of andere host)
 
-2. **Verplicht voor database:** voeg toe (voor Production, en eventueel Preview/Branch deploys):
+1. **Connection string**  
+   Gebruik dezelfde `DATABASE_URL` als lokaal (uit `.env.local`), bijvoorbeeld:
+   ```text
+   postgresql://gebruiker:wachtwoord@JOUW_GOOGLE_CLOUD_IP:5432/database_naam
+   ```
+   Voor Cloud SQL gebruik je vaak het **publieke IP** van het instance, of een hostnaam die je in de GCP-console ziet.
 
-   | Key            | Value / voorbeeld |
-   |----------------|-------------------|
-   | `DATA_SOURCE`  | `postgres`        |
-   | `DATABASE_URL` | `postgresql://user:password@host:5432/database` (jouw connection string, met SSL voor externe hosts) |
+2. **Bereikbaarheid**  
+   Netlify draait op het internet, dus je database moet vanaf het internet bereikbaar zijn:
+   - **Cloud SQL:** bij het instance → **Connections** → zet **Public IP** aan (of gebruik Cloud SQL Auth Proxy als je geen open poort wilt).
+   - In **Authorized networks** (of firewall) moet je óf **0.0.0.0/0** toestaan (alle IP’s) óf de [Netlify IP-ranges](https://docs.netlify.com/security/secure-third-party-services/) toevoegen, zodat alleen Netlify kan verbinden.
+   - Poort **5432** (Postgres) moet openstaan voor inkomend verkeer.
+
+3. **Netlify instellen**  
+   - **Netlify** → jouw site → **Site configuration** → **Environment variables**.
+   - Voeg toe:
+     - **`DATA_SOURCE`** = `postgres`
+     - **`DATABASE_URL`** = jouw Google Cloud connection string (zoals hierboven).
+   - Optioneel: **`DEALS_BRAND`** = `fox`, **`DEALS_GENERATE_BOOL`** = `true` (zoals lokaal).
+   - **Save** → **Deploys** → **Trigger deploy** → **Clear cache and deploy site**.
+
+4. **Controleren**  
+   Open de live site → **Instellingen**. Bij "Database" zou **VERBONDEN** moeten staan.
+
+Geen Railway nodig: Netlify praat direct met je Google Cloud database.
+
+### Alternatief: database op Railway
+
+Als je **geen** bestaande database hebt, kun je er een op [Railway](https://railway.app) aanmaken (**+ New** → **Database** → **PostgreSQL**), de publieke `DATABASE_URL` kopiëren en die in Netlify als **`DATABASE_URL`** zetten. De app op Netlify verbindt dan met Railway in plaats van met Google Cloud.
+
+---
+
+## Deploy op Netlify – overige env
+
+`.env.local` wordt **niet** meegedeployed. Op Netlify moeten dezelfde variabelen in **Environment variables** staan.
+
+1. **Netlify** → jouw site → **Site configuration** → **Environment variables**.
+
+2. **Voor database** (lokaal of Railway): zie hierboven (`DATA_SOURCE`, `DATABASE_URL`).
 
 3. **Optioneel:**
 
@@ -80,14 +128,15 @@ npm run dev
    |--------------------------|--------|
    | `DEALS_BRAND`            | Bijv. `fox` – alleen deals met dit merk |
    | `DEALS_TABLE`            | Tabelnaam als die niet `deals` is |
+   | `DEALS_GENERATE_BOOL`    | `true` als je tabel `generate` als boolean heeft |
    | `OPENAI_API_KEY`         | Voor **AI Regenerate** (Facebook-post genereren) |
-   | `RESEND_API_KEY`         | Voor e-mailnotificaties (afgelopen / bijna aflopende deal, wekelijkse update) |
+   | `RESEND_API_KEY`         | Voor e-mailnotificaties |
    | `NOTIFICATION_FROM_EMAIL` | Afzender e-mail voor notificaties |
-   | `CRON_SECRET`            | Geheim voor aanroep van `/api/cron/notifications` (cron-job.org of Netlify Scheduled) |
+   | `CRON_SECRET`            | Geheim voor `/api/cron/notifications` (cron-job.org of Netlify Scheduled) |
 
-4. **Opslaan** en daarna: **Deploys** → **Trigger deploy** → **Clear cache and deploy site**, zodat de nieuwe variabelen in de build worden gebruikt.
+4. **Deploys** → **Trigger deploy** → **Clear cache and deploy site**.
 
-5. **Controleren:** open de live site → **Instellingen**. Bij "Database" zou **VERBONDEN** moeten staan als `DATA_SOURCE` en `DATABASE_URL` goed staan.
+5. **Controleren:** live site → **Instellingen** → Database-status.
 
 ## Routes
 
