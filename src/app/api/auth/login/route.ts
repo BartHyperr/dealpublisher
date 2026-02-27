@@ -39,6 +39,15 @@ export async function POST(req: Request) {
   }
 
   if (!verifyCredentials(username, password)) {
+    if (process.env.NODE_ENV === "development") {
+      const u = process.env.LOGIN_USERNAME?.trim();
+      console.warn(
+        "[auth] Login mislukt: ontvangen username length=%s, password length=%s; env LOGIN_USERNAME length=%s",
+        username.length,
+        password.length,
+        u?.length ?? 0
+      );
+    }
     return NextResponse.json(
       { error: "Onjuiste gebruikersnaam of wachtwoord" },
       { status: 401 }

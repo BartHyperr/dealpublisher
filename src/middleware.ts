@@ -5,14 +5,22 @@ const AUTH_COOKIE_NAME = "hyperr_auth";
 const LOGIN_PATH = "/login";
 const AUTH_API = "/api/auth";
 
+function normalizeEnv(value: string | undefined): string {
+  if (value == null) return "";
+  const s = value.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    return s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 function isAuthEnabled(): boolean {
-  return Boolean(
-    process.env.LOGIN_PASSWORD != null && process.env.LOGIN_PASSWORD.trim() !== ""
-  );
+  return normalizeEnv(process.env.LOGIN_PASSWORD) !== "";
 }
 
 function isAuthenticated(request: NextRequest): boolean {
-  const secret = process.env.LOGIN_SECRET ?? process.env.LOGIN_PASSWORD ?? "";
+  const secret =
+    normalizeEnv(process.env.LOGIN_SECRET) || normalizeEnv(process.env.LOGIN_PASSWORD);
   if (!secret) return false;
   const cookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   return cookie === secret;

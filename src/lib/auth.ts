@@ -6,19 +6,30 @@
 export const AUTH_COOKIE_NAME = "hyperr_auth";
 
 export function isAuthEnabled(): boolean {
-  return Boolean(
-    process.env.LOGIN_PASSWORD != null && process.env.LOGIN_PASSWORD.trim() !== ""
-  );
+  return normalizeEnv(process.env.LOGIN_PASSWORD) !== "";
 }
 
 export function getAuthSecret(): string {
-  return process.env.LOGIN_SECRET ?? process.env.LOGIN_PASSWORD ?? "";
+  return (
+    normalizeEnv(process.env.LOGIN_SECRET) ||
+    normalizeEnv(process.env.LOGIN_PASSWORD) ||
+    ""
+  );
+}
+
+function normalizeEnv(value: string | undefined): string {
+  if (value == null) return "";
+  const s = value.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    return s.slice(1, -1).trim();
+  }
+  return s;
 }
 
 export function verifyCredentials(username: string, password: string): boolean {
-  const expectedPassword = process.env.LOGIN_PASSWORD?.trim();
+  const expectedPassword = normalizeEnv(process.env.LOGIN_PASSWORD);
   if (!expectedPassword) return false;
-  const expectedUsername = process.env.LOGIN_USERNAME?.trim();
+  const expectedUsername = normalizeEnv(process.env.LOGIN_USERNAME);
   if (expectedUsername) {
     return (
       username.trim() === expectedUsername && password.trim() === expectedPassword
