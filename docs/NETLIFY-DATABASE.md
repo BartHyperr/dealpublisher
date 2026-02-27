@@ -19,6 +19,9 @@
 
 4. Klik **Save** of **Save all**.
 
+**Belangrijk voor login en opslaan op Netlify:**  
+De variabelen `LOGIN_USERNAME`, `LOGIN_PASSWORD` en `LOGIN_SECRET` moeten **bij runtime** beschikbaar zijn, niet alleen bij build. In Netlify: geef ze **Scope “All”** (of in ieder geval **Production**), zodat zowel de build als de serverless/Edge-functies ze kunnen gebruiken. Anders kun je wel inloggen maar geeft “Opslaan” (bijv. AI-prompt) **Unauthorized**.
+
 ## Stap 2: Nieuwe deploy triggeren
 
 Env-variabelen worden alleen meegenomen bij een **nieuwe** build.
@@ -54,3 +57,8 @@ De app op Netlify draait op servers van Netlify. Die moeten **naar jouw database
 
 - **Timeout of connection refused**  
   - De database (34.32.128.18) blokkeert verbindingen van buiten. Firewall of “Authorized networks” aanpassen zodat verbindingen vanaf het internet (of Netlify) zijn toegestaan.
+
+- **“Opslaan” geeft Unauthorized of werkt niet**  
+  - Controleer of je bent ingelogd op de live Netlify-URL (niet alleen lokaal).
+  - Zet `LOGIN_PASSWORD` (en eventueel `LOGIN_USERNAME`, `LOGIN_SECRET`) in Netlify met **Scope “All”** of **Production**, zodat ze bij **runtime** beschikbaar zijn. Na aanpassing: opnieuw deployen.
+  - In de browser: bij “AI-prompt opslaan” of notificaties zou je nu de echte foutmelding in de toast zien (bijv. “Unauthorized” of een serverfout).

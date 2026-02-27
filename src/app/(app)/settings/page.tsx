@@ -136,13 +136,17 @@ export default function SettingsPage() {
           notifyDaysBefore: notif.notifyDaysBefore,
           weeklyDigest: notif.weeklyDigest,
         }),
+        credentials: "include",
       });
-      if (!res.ok) throw new Error("Opslaan mislukt");
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(errBody?.error ?? `Opslaan mislukt (${res.status})`);
+      }
       const updated = (await res.json()) as NotificationSettings;
       setNotif(updated);
       toast.success("Notificatie-instellingen opgeslagen");
-    } catch {
-      toast.error("Kon notificaties niet opslaan");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kon notificaties niet opslaan");
     } finally {
       setNotifSaving(false);
     }
@@ -156,13 +160,17 @@ export default function SettingsPage() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ systemPrompt: promptSettings.systemPrompt }),
+        credentials: "include",
       });
-      if (!res.ok) throw new Error("Opslaan mislukt");
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(errBody?.error ?? `Opslaan mislukt (${res.status})`);
+      }
       const updated = (await res.json()) as PromptSettings;
       setPromptSettings(updated);
       toast.success("AI-prompt opgeslagen");
-    } catch {
-      toast.error("Kon AI-prompt niet opslaan");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kon AI-prompt niet opslaan");
     } finally {
       setPromptSaving(false);
     }
